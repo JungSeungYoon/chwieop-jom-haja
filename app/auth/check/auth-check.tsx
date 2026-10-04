@@ -5,6 +5,7 @@ import type { Session } from "@supabase/supabase-js";
 import { browserAuth, loginWithGitHub, profileRequest } from "../../../lib/browser-auth.ts";
 import DraftCheck from "./draft-check.tsx";
 import ArchiveCheck from "./archive-check.tsx";
+import CollectionCheck from "./collection-check.tsx";
 
 type Profile = { id: string; handle: string; nickname: string; major: string; interests: string; bio: string };
 
@@ -93,6 +94,7 @@ export default function AuthCheck() {
       {profile && <p>저장된 프로필: <a href={`/api/profiles/${profile.handle}`}>{profile.nickname} / {profile.handle}</a></p>}
       {profile && <DraftCheck key={`${profile.id}-${recordsEpoch}`} />}
       {profile && <ArchiveCheck key={profile.id} onChange={() => setRecordsEpoch((value) => value + 1)} />}
+      {profile && <CollectionCheck key={`collections-${profile.id}`} owner={profile.id} />}
     </>}
   </main>;
 }
