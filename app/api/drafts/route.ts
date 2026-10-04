@@ -21,7 +21,7 @@ export async function GET(request: Request): Promise<Response> {
     if (!/^\d{1,6}$/.test(offset)) throw new ApiError(400, "INVALID_INPUT", "offset은 0~999999 정수로 입력해주세요.");
     const { data, error } = await client.from("record_drafts")
       .select("id,record_type,title,tags,version,created_at,updated_at")
-      .eq("owner_id", user.id).order("updated_at", { ascending: false }).order("id")
+      .eq("owner_id", user.id).is("deleted_at", null).order("updated_at", { ascending: false }).order("id")
       .range(Number(offset), Number(offset) + 19);
     if (error) databaseError(error);
     return json({ data });

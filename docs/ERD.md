@@ -24,6 +24,7 @@ erDiagram
         integer version "발행본 버전"
         timestamptz created_at "최초 정식 저장"
         timestamptz updated_at "마지막 적용"
+        timestamptz deleted_at "휴지통 이동, 정상은 null"
     }
     RECORD_DRAFTS {
         uuid id PK "초안 ID"
@@ -36,6 +37,7 @@ erDiagram
         integer version "수정마다 증가"
         timestamptz created_at "생성 시각"
         timestamptz updated_at "수정 시각"
+        timestamptz deleted_at "휴지통 이동, 정상은 null"
     }
     PROFILES {
         uuid id PK,FK "인증 사용자 ID"
@@ -76,10 +78,18 @@ PostgreSQL 권한과 RLS 정책을 함께 적용한다. 클라이언트가 Next.
 
 ## 발행본과 원자적 적용
 
-`records`는 초안 하나당 발행본 0개 또는 1개를 갖는다. 초안 저장은 발행본을 변경하지 않는다. 발행 시 초안 콘텐츠를 복사해 공개/비공개 상태로 저장한다. 초안 삭제 시 발행본도 삭제되는 외래 키를 적용했다. 실제 삭제 API는 아직 구현하지 않았다.
+`records`는 초안 하나당 발행본 0개 또는 1개를 갖는다. 초안 저장은 발행본을 변경하지 않는다. 발행 시 초안 콘텐츠를 복사해 공개/비공개 상태로 저장한다. 물리적인 초안 삭제 시 발행본도 삭제되는 외래 키를 적용했다. 서비스 삭제는 아래의 휴지통 방식으로 처리한다.
 
 익명은 공개 행만, 회원은 공개 행과 본인 비공개 행만 조회한다. INSERT·UPDATE·DELETE 권한은 두 역할 모두에 없다. `apply_record` 함수만 인증 회원에게 실행을 허용한다. `SECURITY DEFINER` 함수에 빈 search_path·명시적 스키마를 적용하고 내부에서 `auth.uid()`·소유자·두 버전을 검증한다. 익명 및 PUBLIC의 실행 권한은 회수했다.
 
 초안 행과 발행본을 잠근 뒤 한 트랜잭션에서 복사하여 초안 저장과 발행 요청이 엇갈리지 않도록 한다. 오래된 요청이 비공개 상태를 다시 공개하는 것도 발행 버전 검사로 차단한다. 원본 초안 버전은 `source_version`에 보관한다.
 
 세 번째 마이그레이션: `supabase/migrations/202610050003_records.sql`. 발행 이력 전체 대신 마지막 적용본만 저장한다.
+
+## 검색과 복원 가능한 삭제
+
+네 번째 마이그레이션 `202610050004_search_trash.sql`은 두 테이블의 nullable `deleted_at`, 공개 목록용 부분 인덱스, 검색·휴지통 함수를 추가한다. 일반 API는 삭제 행을 제외한다. DB RLS는 익명·타인에게 삭제된 공개 행을 보여주지 않으며, 소유자는 본인 휴지통 복구를 위해 직접 DB 조회로도 본인 삭제 행을 볼 수 있다. 삭제된 초안의 일반 수정은 RLS에서도 차단한다.
+
+`search_records`·`search_archive`는 SECURITY INVOKER로 테이블 RLS를 그대로 적용한다. 공개 검색은 추가로 공개·미삭제만 제한한다. 내 아카이브는 초안에 발행본 메타데이터를 조인하여 기록 ID당 한 결과와 저장/발행 버전을 반환한다. 검색어는 바인딩한 값으로 부분 문자열 검사하고 태그는 배열 포함 연산 `@>`로 AND 조건을 적용한다.
+
+`set_record_deleted`는 SECURITY DEFINER이며 인증 소유자·두 버전을 검사하고 한 트랜잭션에서 두 행을 삭제 상태로 변경하거나 복원한다. 직접 deleted_at 수정 권한은 부여하지 않는다. 복원은 발행본을 비공개로 돌리고 버전을 증가시킨다. 삭제된 초안의 발행도 차단한다. 영구 삭제와 자동 보관 만료는 구현하지 않았다.

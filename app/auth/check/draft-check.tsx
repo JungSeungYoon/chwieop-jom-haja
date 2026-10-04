@@ -14,6 +14,7 @@ export default function DraftCheck() {
   const [kind, setKind] = useState<DraftType>("project");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [tags, setTags] = useState("");
   const [message, setMessage] = useState("초안 목록 확인 중");
   const [busy, setBusy] = useState(true);
 
@@ -37,6 +38,7 @@ export default function DraftCheck() {
         }),
       ]);
       setDraft(data); setKind(data.record_type); setTitle(data.title); setBody(data.body);
+      setTags(data.tags.join(", "));
       setPublished(snapshot);
       setMessage(`초안 불러오기 성공 · 버전 ${data.version}`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "불러오기 실패"); }
@@ -45,7 +47,7 @@ export default function DraftCheck() {
 
   async function publish(visibility: "public" | "private") {
     if (!draft) return;
-    if (kind !== draft.record_type || title !== draft.title || body !== draft.body) {
+    if (kind !== draft.record_type || title !== draft.title || body !== draft.body || JSON.stringify(inputTags()) !== JSON.stringify(draft.tags)) {
       setMessage("입력한 변경 내용을 먼저 초안으로 저장해주세요."); return;
     }
     setBusy(true);
@@ -57,6 +59,8 @@ export default function DraftCheck() {
     } catch (error) { setMessage(error instanceof Error ? error.message : "정식 저장 실패"); }
     finally { setBusy(false); }
   }
+
+  function inputTags() { return tags.split(",").map((tag) => tag.trim()).filter(Boolean); }
 
   async function checkVisitor() {
     if (!draft) return;
@@ -74,10 +78,11 @@ export default function DraftCheck() {
     try {
       const data: Draft = await profileRequest(draft ? `/api/drafts/${draft.id}` : "/api/drafts", draft ? "PUT" : "POST", {
         record_type: kind, title, body,
-        details: draft?.record_type === kind ? draft.details : {}, tags: draft?.tags ?? [],
+        details: draft?.record_type === kind ? draft.details : {}, tags: inputTags(),
         ...(draft ? { version: stale ? Math.max(1, draft.version - 1) : draft.version } : {}),
       });
       setDraft(data);
+      setTags(data.tags.join(", "));
       setItems((current) => [data, ...current.filter((item) => item.id !== data.id)]);
       setMessage(`초안 저장 성공 · 버전 ${data.version} · 본인만 조회 가능`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "저장 실패 — 입력은 유지됩니다."); }
@@ -93,6 +98,7 @@ export default function DraftCheck() {
       <p><label>글 종류 <select value={kind} onChange={(event) => setKind(event.target.value as DraftType)}><option value="project">프로젝트</option><option value="study">공부 기록</option><option value="other">기타</option></select></label></p>
       <p><label>초안 제목 <input value={title} onChange={(event) => setTitle(event.target.value)} /></label></p>
       <p><label>초안 본문 <textarea rows={6} cols={70} value={body} onChange={(event) => setBody(event.target.value)} /></label></p>
+      <p><label>글 태그 (쉼표 구분) <input value={tags} onChange={(event) => setTags(event.target.value)} /></label></p>
       <button onClick={() => { void save(); }}>{draft ? "초안 수정 저장" : "새 초안 저장"}</button>{" "}
       {draft && draft.version > 1 && <button onClick={() => { void save(true); }}>이전 버전 충돌 검사</button>}
       {draft && <p>

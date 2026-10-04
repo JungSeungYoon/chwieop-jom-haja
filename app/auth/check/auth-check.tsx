@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { browserAuth, loginWithGitHub, profileRequest } from "../../../lib/browser-auth.ts";
 import DraftCheck from "./draft-check.tsx";
+import ArchiveCheck from "./archive-check.tsx";
 
 type Profile = { id: string; handle: string; nickname: string; major: string; interests: string; bio: string };
 
@@ -14,6 +15,7 @@ export default function AuthCheck() {
   const [nickname, setNickname] = useState("");
   const [bio, setBio] = useState("");
   const [ready, setReady] = useState(false);
+  const [recordsEpoch, setRecordsEpoch] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("로그인 상태 확인 중");
 
@@ -89,7 +91,8 @@ export default function AuthCheck() {
         <button disabled={busy}>{profile ? "프로필 수정" : "프로필 등록"}</button>
       </form>
       {profile && <p>저장된 프로필: <a href={`/api/profiles/${profile.handle}`}>{profile.nickname} / {profile.handle}</a></p>}
-      {profile && <DraftCheck key={profile.id} />}
+      {profile && <DraftCheck key={`${profile.id}-${recordsEpoch}`} />}
+      {profile && <ArchiveCheck key={profile.id} onChange={() => setRecordsEpoch((value) => value + 1)} />}
     </>}
   </main>;
 }

@@ -7,7 +7,7 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
   return withApi(async () => {
     const client = request.headers.has("authorization") ? (await authenticate(request)).client : supabase();
     const id = draftId((await context.params).id);
-    const { data, error } = await client.from("records").select(recordFields).eq("id", id).maybeSingle();
+    const { data, error } = await client.from("records").select(recordFields).eq("id", id).is("deleted_at", null).maybeSingle();
     if (error) databaseError(error);
     if (!data) throw new ApiError(404, "RECORD_NOT_FOUND", "발행 글을 찾을 수 없습니다.");
     return json({ data });
