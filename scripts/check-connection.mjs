@@ -29,7 +29,7 @@ for (const [path, status, code, headers] of [
   console.log(`통과: ${path} → ${status} ${code}`);
 }
 const id = randomUUID();
-for (const path of ["/api/records", `/api/pins?owner=${id}`]) {
+for (const path of ["/api/records", "/api/records?feed=1", `/api/pins?owner=${id}`]) {
   const response = await fetch(`${apiOrigin}${path}`, { signal: AbortSignal.timeout(15000) });
   assert.equal(response.status,200,path);
   assert.ok(Array.isArray((await response.json()).data));

@@ -1,6 +1,8 @@
 # GitHub 로그인 연결
 
-현재 상태: GitHub OAuth 앱·Supabase Provider 연결과 실제 회원 로그인·프로필 등록·수정·새로고침·로그아웃·재로그인 검증 완료. 최종 서비스 UI와 배포 환경의 인증 연결은 후속 단계다.
+현재 상태: GitHub OAuth 앱·Supabase Provider 연결과 실제 회원 로그인·프로필 등록·수정·새로고침·로그아웃·재로그인 검증 완료. 탐색 화면 로그인도 연결했으며 프로필 설정 UI와 배포 환경의 인증 연결은 후속 단계다.
+
+탐색 단계에서는 서비스 메인 화면의 GitHub 로그인·로그아웃을 연결했다. `loginWithGitHub("/")`가 현재 origin의 메인 화면으로 반환하며, 기존 Site URL인 `http://localhost:3000`에서 실제 PKCE 코드 교환·프로필 복원을 확인했다. 개발 검증 도구는 기본 인수 `/auth/check`를 유지한다. 콜백 code는 SDK의 세션 초기화 완료 후 URL에서 제거한다. 배포 origin과 프로필 설정 UI는 후속 단계다.
 
 ## 설정할 값
 

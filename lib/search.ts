@@ -3,7 +3,8 @@ import { draftId, parseDraft } from "./draft.ts";
 
 export function parseSearch(url: URL, archive = false) {
   const params = url.searchParams;
-  const allowed = ["q", "type", "tag", "offset", archive ? "state" : "owner"];
+  const allowed = ["q", "type", "tag", "offset", ...(archive ? ["state"] : ["owner", "feed"])];
+  if (params.has("feed") && params.get("feed") !== "1") throw new ApiError(400, "INVALID_INPUT", "feed는 1로 지정해주세요.");
   for (const key of params.keys()) {
     if (!allowed.includes(key) || (key !== "tag" && params.getAll(key).length > 1)) throw new ApiError(400, "INVALID_INPUT", "검색 조건을 확인해주세요.");
   }

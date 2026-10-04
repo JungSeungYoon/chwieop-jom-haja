@@ -10,6 +10,12 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     const { data, error } = await client.from("records").select(recordFields).eq("id", id).is("deleted_at", null).maybeSingle();
     if (error) databaseError(error);
     if (!data) throw new ApiError(404, "RECORD_NOT_FOUND", "발행 글을 찾을 수 없습니다.");
+    if (new URL(request.url).searchParams.get("feed") === "1" && data.visibility === "public") {
+      const metadata = await client.rpc("feed_metadata", { p_ids: [id] });
+      if (metadata.error) databaseError(metadata.error);
+      if (!metadata.data?.[0]) throw new ApiError(404, "RECORD_NOT_FOUND", "공개 기록을 찾을 수 없습니다.");
+      return json({ data: { ...data, ...metadata.data[0], excerpt: data.body.slice(0, 200) } });
+    }
     return json({ data });
   });
 }

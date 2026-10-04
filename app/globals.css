@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, monospace;
+}
+body { margin: 0; background: white; color: #18181b; }
+button:not(:disabled), a { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled) { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .5; }
+:where(a,button,input,select):focus-visible { outline: 2px solid #18181b; outline-offset: 4px; }
+::selection { background: #e4e4e7; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

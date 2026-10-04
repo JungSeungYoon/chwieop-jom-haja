@@ -40,6 +40,8 @@ test("백엔드 통합: 사진·발행 스냅샷·검색·핀·타인 보관·�
     await actor(reader);
     for(const record of [project,study]) await db.query("select * from set_bookmark($1,true)",[record]);
     assert.equal((await db.query("select * from list_bookmarks(0)")).rows.length,2);
+    const feed=(await db.query<{is_bookmarked:boolean;is_pinned:boolean;linked_study_count:number}>("select * from feed_metadata($1)",[[project]])).rows[0];
+    assert.equal(feed.is_bookmarked,true);assert.equal(feed.is_pinned,true);assert.equal(Number(feed.linked_study_count),1);
     assert.equal((await db.query("select * from record_drafts")).rows.length,0);
     await assert.rejects(db.query("select * from apply_record($1,3,1,'private')",[project]),{code:"P0002"});
     await actor(owner);
@@ -49,6 +51,9 @@ test("백엔드 통합: 사진·발행 스냅샷·검색·핀·타인 보관·�
     const own=(await db.query<{has_unapplied_changes:boolean;draft_version:number;source_version:number}>("select * from search_archive('',null,'{}','all',0) where id=$1",[project])).rows[0];
     assert.deepEqual([own.has_unapplied_changes,own.draft_version,own.source_version],[true,5,3]);
     await actor(null);
+    const publicFeed=(await db.query<{is_bookmarked:boolean;author:{nickname:string}}>("select * from feed_metadata($1)",[[project]])).rows[0];
+    assert.equal(publicFeed.is_bookmarked,false);assert.equal(publicFeed.author.nickname,"회원");
+    await assert.rejects(db.query("select * from feed_metadata($1)",[Array.from({length:21},()=>project)]),{code:"22023"});
     assert.equal((await db.query("select * from search_records('미공개',null,'{}',null,0)")).rows.length,0);
     assert.equal((await db.query("select * from search_records('TCP','project',array['TCP','보안'],null,0)")).rows.length,1);
     assert.equal((await db.query<{title:string}>("select * from list_pins($1)",[owner])).rows[0].title,"통합 프로젝트");
@@ -60,6 +65,9 @@ test("백엔드 통합: 사진·발행 스냅샷·검색·핀·타인 보관·�
     await actor(owner);await db.query("select * from apply_record($1,6,1,'private')",[project]); // 발행 v2
     await actor(reader);
     assert.equal((await db.query("select * from list_bookmarks(0)")).rows.length,1);
+    assert.equal((await db.query("select * from feed_metadata($1)",[[project]])).rows.length,0);
+    const studyMetadata=(await db.query<{linked_study_count:number}>("select * from feed_metadata($1)",[[study]])).rows[0];
+    assert.equal(Number(studyMetadata.linked_study_count),0);
     assert.equal((await db.query("select * from bookmarks")).rows.length,2); // 보관 참조는 유지, 비공개 콘텐츠는 숨김
     assert.equal((await db.query("select * from images")).rows.length,0);
     assert.equal((await db.query("select * from storage.objects")).rows.length,0);

@@ -52,6 +52,15 @@ test("검색·휴지통 API: 인증·RPC 인수·오류·페이지 반환", asyn
     assert.equal(result.data.length, 20); assert.equal(result.page.has_more, true);
     assert.equal(calls[0].url.pathname, "/rest/v1/rpc/search_records");
     assert.equal(JSON.parse(String(calls[0].init?.body)).p_query, "TCP");
+    replies = [{ data: [{ id, owner_id: owner, title: "실제 제목" }] }, { data: [{ id, author: { handle: "owner-user", nickname: "회원" }, is_pinned: true, is_bookmarked: false, linked_study_count: 2 }] }];
+    const feed = await (await search(new Request("http://localhost/api/records?feed=1"))).json();
+    assert.equal(feed.data[0].author.nickname, "회원"); assert.equal(feed.data[0].visibility, "public");
+    assert.deepEqual(JSON.parse(String(calls.at(-1)?.init?.body)).p_ids, [id]);
+    replies = [{ data: [{ id }] }, { data: [] }];
+    assert.equal((await (await search(new Request("http://localhost/api/records?feed=1"))).json()).data.length, 0);
+    replies = [{ data: [{ id }] }, { data: { code: "PGRST202" }, status: 404 }];
+    assert.equal((await search(new Request("http://localhost/api/records?feed=1"))).status, 503);
+    assert.equal((await search(new Request("http://localhost/api/records?feed=wrong"))).status, 400);
     replies = [{ data: user }, { data: [] }];
     assert.equal((await archive(req("GET", "?state=deleted"))).status, 200);
     assert.equal(JSON.parse(String(calls.at(-1)?.init?.body)).p_state, "deleted");

@@ -12,11 +12,11 @@ export function browserAuth() {
   return client;
 }
 
-export async function loginWithGitHub() {
+export async function loginWithGitHub(returnPath = "/auth/check") {
   const { error } = await browserAuth().auth.signInWithOAuth({
     provider: "github",
     options: {
-      redirectTo: `${window.location.origin}/auth/check`,
+      redirectTo: `${window.location.origin}${returnPath}`,
       scopes: "read:user user:email",
     },
   });
