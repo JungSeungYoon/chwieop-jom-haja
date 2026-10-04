@@ -45,6 +45,13 @@ export default function DraftCheck() {
     finally { setBusy(false); }
   }
 
+  async function refresh() {
+    setBusy(true);
+    try { setItems(await profileRequest("/api/drafts")); setMessage("초안 목록 새로 조회 완료 — 편집 입력은 유지됩니다."); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "목록 요청 실패"); }
+    finally { setBusy(false); }
+  }
+
   async function publish(visibility: "public" | "private") {
     if (!draft) return;
     if (kind !== draft.record_type || title !== draft.title || body !== draft.body || JSON.stringify(inputTags()) !== JSON.stringify(draft.tags)) {
@@ -93,6 +100,7 @@ export default function DraftCheck() {
     <h2>비공개 초안 API 검증</h2>
     <p>최종 편집기가 아닌 수동 검증 도구입니다. 자동 저장 UI는 이후 구현합니다.</p>
     <p role="status">{message}</p>
+    <button disabled={busy} onClick={() => { void refresh(); }}>초안 목록 새로 조회</button>
     <ul>{items.map((item) => <li key={item.id}><button disabled={busy} onClick={() => { void load(item.id); }}>{item.title || "제목 없는 초안"} / {item.record_type} / v{item.version}</button></li>)}</ul>
     <fieldset disabled={busy}>
       <p><label>글 종류 <select value={kind} onChange={(event) => setKind(event.target.value as DraftType)}><option value="project">프로젝트</option><option value="study">공부 기록</option><option value="other">기타</option></select></label></p>

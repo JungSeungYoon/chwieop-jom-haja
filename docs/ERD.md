@@ -2,6 +2,8 @@
 
 현재 프로필·비공개 초안·발행 기록·핀·보관함·관련 기록 연결을 구현했다. 사진 테이블은 해당 기능 구현 단계에서 추가한다.
 
+GitHub 가져오기는 기존 `record_drafts`에 새 프로젝트 행을 생성하므로 추가 테이블이나 마이그레이션이 없다. 이름은 title, 설명은 details.intro, 언어 목록은 details.tools와 최대 10개의 tags, README와 원본 URL은 body에 저장한다. 원본 자동 동기화나 별도 불변 출처 필드는 없으며 저장 후 일반 초안처럼 편집·발행한다.
+
 ```mermaid
 erDiagram
     AUTH_USERS ||--o| PROFILES : "서비스 프로필 등록"

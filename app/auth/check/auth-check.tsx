@@ -7,6 +7,7 @@ import DraftCheck from "./draft-check.tsx";
 import ArchiveCheck from "./archive-check.tsx";
 import CollectionCheck from "./collection-check.tsx";
 import LinkCheck from "./link-check.tsx";
+import GitHubImportCheck from "./github-import-check.tsx";
 
 type Profile = { id: string; handle: string; nickname: string; major: string; interests: string; bio: string };
 
@@ -97,6 +98,7 @@ export default function AuthCheck() {
       {profile && <ArchiveCheck key={profile.id} onChange={() => setRecordsEpoch((value) => value + 1)} />}
       {profile && <CollectionCheck key={`collections-${profile.id}`} owner={profile.id} />}
       {profile && <LinkCheck key={`links-${profile.id}`} />}
+      {profile && <GitHubImportCheck key={`github-import-${profile.id}`} />}
     </>}
   </main>;
 }

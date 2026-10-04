@@ -2,7 +2,7 @@
 
 공대생이 프로젝트와 공부 기록을 작성하고, 자신의 포트폴리오와 아카이브를 만드는 웹 서비스.
 
-현재 단계: 백엔드 기능별 구현. Supabase 서울 프로젝트(`chwieop-jom-haja-seoul`, `ap-northeast-2`)에 GitHub 인증·프로필·초안·발행·검색·휴지통·대표 프로젝트 핀·보관함·프로젝트–공부 기록 연결을 구현했습니다. GitHub 가져오기·사진, 최종 프런트엔드·배포는 후속 단계입니다.
+현재 단계: 백엔드 기능별 구현. Supabase 서울 프로젝트(`chwieop-jom-haja-seoul`, `ap-northeast-2`)에 GitHub 인증·프로필·초안·발행·검색·휴지통·대표 프로젝트 핀·보관함·프로젝트–공부 기록 연결과 GitHub 공개 저장소 가져오기를 구현했습니다. 사진, 최종 프런트엔드·배포는 후속 단계입니다.
 
 - [개발 계획서](docs/PLAN.md)
 - [기능명세서](docs/FEATURES.md)
@@ -83,6 +83,7 @@ npm run check:connection -- http://localhost:3100
 | `app/api/drafts/[id]/restore/route.ts` | 본인 휴지통 기록의 비공개 복원, 삭제는 초안 상세 경로의 DELETE |
 | `app/api/pins/route.ts`, `app/api/bookmarks/`, `lib/collection.ts` | 핀 순서 저장·공개 조회, 본인 보관함·입력 검증 |
 | `app/api/links/route.ts`, `app/api/records/[id]/related/route.ts`, `app/api/drafts/[id]/related/route.ts`, `lib/link.ts` | 연결 등록·해제, 양방향 공개/본인 관련 기록 조회 |
+| `app/api/imports/github/route.ts`, `lib/github-import.ts` | 공개 저장소 조회·응답 제한·새 프로젝트 초안 생성 |
 | `lib/api.ts` | 인증 확인, Supabase 연결, JSON 제한, 공통 응답·오류 |
 | `lib/profile.ts` | 프로필 필드·주소·길이 입력 검증 |
 | `supabase/migrations/202610050001_profiles.sql` | 테이블, 제약, 갱신 트리거, 권한·RLS |

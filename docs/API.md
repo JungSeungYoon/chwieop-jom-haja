@@ -322,3 +322,38 @@ PUT·DELETE JSON 본문은 최대 8192바이트다. 두 필드 외 입력을 거
 두 목록은 최초 연결 시각 내림차순·동일 시각 관련 기록 ID 순이며 offset 0~999999만 허용한다. `{ "data": [], "page": { "limit": 20, "has_more": false } }` 형태로 최대 20개와 다음 공개/본인 결과 존재 여부만 반환한다. 총 연결 개수는 반환하지 않는다. offset 방식의 동시 변경 한계는 공개 검색과 같다.
 
 비공개·휴지통 전환 시 참조는 유지하고 해당 조회에서 제외한다. 복원 후 본인 조회에 다시 표시되며 양쪽을 공개 적용하면 공개 조회에도 다시 나타난다. **초안 유형 변경은 기존 연결을 즉시 해제**하고 자동 재연결하지 않는다. 연결 변경은 본문 발행과 별개로 즉시 적용한다. 모든 응답은 `no-store`; 저장소 요청 실패는 `503`이다.
+
+## 17. GitHub 공개 저장소 가져오기
+
+`POST /api/imports/github` — 인증 필수. JSON 본문 최대 8192바이트, url 외 필드 거부.
+
+```json
+{ "url": "https://github.com/소유자/저장소" }
+```
+
+URL은 최대 300자, https의 github.com 저장소 루트 주소만 허용한다. 둘레 공백·마지막 슬래시·`.git` 접미사는 정규화한다. 자격 증명·쿼리·fragment·파일/브랜치 경로·인코딩 경로·다른 호스트와 포트는 거부한다. 기본 https 포트 443은 허용한다.
+
+인증 사용자 ID로 **새 프로젝트 초안**을 생성한다. 기존 초안을 수정하거나 발행하지 않는다. 성공 `201`은 일반 초안 data와 가져오기 정보를 반환한다.
+
+```json
+{ "data": { "id": "새 UUID", "record_type": "project", "title": "저장소 이름", "body": "README와 출처 링크", "details": { "intro": "설명", "tools": "TypeScript, Python" }, "tags": ["TypeScript", "Python"], "version": 1 }, "import": { "source_url": "https://github.com/owner/repo", "languages": ["TypeScript", "Python"], "readme_missing": false } }
+```
+
+data에는 기존 초안과 동일하게 owner_id·created_at·updated_at도 포함한다. 사용 언어는 GitHub의 바이트 수 내림차순이며 전체 이름 목록을 tools에 저장한다. 태그는 길이 조건을 만족하는 앞 10개를 사용한다. 설명·언어가 없으면 빈 값, README 404는 누락으로 처리하고 출처 링크만 본문에 남긴다. README 상대 링크·이미지는 자동 변환하지 않는다. HTML을 실행하거나 외부 자산을 자동 다운로드하지 않는다.
+
+GitHub 토큰·사용자 Supabase 토큰을 GitHub 요청에 전달하지 않는다. API 호스트를 api.github.com으로 고정하고 리다이렉트를 따라가지 않는다. 메타데이터 조회 성공 후 언어·기본 브랜치 README를 병렬 조회한다. 모든 GitHub 조회·본문 수신에 공유 8초 제한을 적용한다. 메타데이터·언어 응답은 각각 64KiB, README는 400KiB까지 읽고 최종 본문은 출처 포함 100,000자 이하로 제한한다. 설명·언어 문자열은 각 5,000자 이하의 기존 초안 조건을 따른다. 초과하거나 허용하지 않는 문자가 있으면 임의로 자르지 않고 거부한다.
+
+| HTTP | 코드 | 의미 |
+|---|---|---|
+| 400 | INVALID_INPUT | URL·JSON 필드 오류 |
+| 401 | UNAUTHORIZED | 인증 필요·만료 |
+| 404 | GITHUB_REPOSITORY_NOT_FOUND | 없는·비공개·접근 불가 저장소 |
+| 404 | PROFILE_NOT_FOUND | 초안 저장에 필요한 프로필 없음 |
+| 422 | GITHUB_REPOSITORY_MOVED | 현재 주소로 재입력 필요 |
+| 422 | GITHUB_CONTENT_TOO_LARGE / GITHUB_CONTENT_INVALID | 응답 크기·초안 내용 조건 초과 |
+| 429 | GITHUB_RATE_LIMIT | GitHub가 403/429로 요청 제한 |
+| 502 | GITHUB_UNAVAILABLE / GITHUB_INVALID_RESPONSE | GitHub 연결·상태·응답 오류 |
+| 503 | SERVICE_UNAVAILABLE | 인증 서버·초안 저장소 요청 실패 |
+| 504 | GITHUB_TIMEOUT | GitHub 8초 시간 제한 초과 |
+
+외부 조회가 모두 성공한 뒤에만 초안을 INSERT한다. 실패가 기존 편집 내용이나 기록을 덮어쓰지 않는다. 응답을 잃은 뒤 같은 요청을 다시 보내면 별도 초안이 생길 수 있으므로 목록을 먼저 확인한다. 자동 재시도·캐시·원본 동기화는 하지 않는다. GitHub 공개 API 한도는 배포 서버 IP의 여러 사용자가 공유할 수 있으며, 제한 시 사용자가 다시 요청한다. 응답은 `Cache-Control: no-store`다. 공개 조회·요청 한도는 [GitHub 공식 API 문서](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)를 따른다.
