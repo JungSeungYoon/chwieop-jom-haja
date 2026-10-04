@@ -42,7 +42,7 @@ npm run dev
 4. [GitHub 로그인 설정](docs/AUTH_SETUP.md)에 따라 Provider·OAuth 앱·콜백 URL을 연결합니다. 현재 서울 프로젝트는 설정을 완료했습니다. 임의의 GitHub 토큰은 이 API의 인증 토큰으로 사용할 수 없습니다.
 5. 서버를 재시작한 뒤 [API 명세서](docs/API.md)에 따라 요청합니다.
 
-현재 서울 프로젝트에는 프로필·초안 마이그레이션을 SQL Editor로 적용했습니다. 다시 실행하지 않습니다. 도쿄의 초기 프로젝트는 사용하지 않으며 아직 삭제하지 않았습니다. 프로덕션 실행에서는 `NEXT_PUBLIC_` 환경 변수를 바꾼 후 `npm run build`로 다시 빌드합니다.
+현재 서울 프로젝트에는 프로필·초안·발행본 마이그레이션을 SQL Editor로 적용했습니다. 다시 실행하지 않습니다. 도쿄의 초기 프로젝트는 사용하지 않으며 아직 삭제하지 않았습니다. 프로덕션 실행에서는 `NEXT_PUBLIC_` 환경 변수를 바꾼 후 `npm run build`로 다시 빌드합니다.
 
 publishable key는 사용자 인증 토큰을 대신하지 않습니다. 이 백엔드는 관리자 `service_role`/secret 키가 필요하지 않습니다. 실제 설정 값·사용자 토큰은 GitHub에 커밋하지 않습니다. `.env`는 `.gitignore`로 제외하며 `.env.example`에는 빈 설정 항목만 둡니다.
 
@@ -77,10 +77,13 @@ npm run check:connection -- http://localhost:3100
 | `app/api/profiles/[handle]/route.ts` | 개인 주소로 공개 프로필 조회 |
 | `app/api/drafts/route.ts`, `app/api/drafts/[id]/route.ts` | 본인 비공개 초안 생성·목록·조회·버전 조건 저장 |
 | `lib/draft.ts` | 글 종류·안내 항목·태그·본문·버전 입력 검증 |
+| `app/api/drafts/[id]/publish/route.ts` | 초안 버전·발행본 버전 확인 후 공개/비공개 적용 |
+| `app/api/records/[id]/route.ts`, `lib/record.ts` | 발행 글 권한 조회·발행 조건 검증 |
 | `lib/api.ts` | 인증 확인, Supabase 연결, JSON 제한, 공통 응답·오류 |
 | `lib/profile.ts` | 프로필 필드·주소·길이 입력 검증 |
 | `supabase/migrations/202610050001_profiles.sql` | 테이블, 제약, 갱신 트리거, 권한·RLS |
 | `supabase/migrations/202610050002_record_drafts.sql` | 초안 테이블·제약·버전 트리거·본인 RLS |
+| `supabase/migrations/202610050003_records.sql` | 발행본·조회 RLS·잠금과 버전 검사를 사용하는 저장 함수 |
 | `tests/*.test.ts` | API 흐름·입력·DB 권한 검증 |
 | `scripts/check-connection.mjs` | 실제 Supabase·로컬 API 연결 확인, 데이터 변경 없음 |
 

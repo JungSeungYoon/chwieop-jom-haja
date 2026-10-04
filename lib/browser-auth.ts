@@ -23,6 +23,12 @@ export async function loginWithGitHub() {
   if (error) throw new Error("GitHub 로그인 요청에 실패했습니다. 인증 설정을 확인해주세요.");
 }
 
+export class ApiRequestError extends Error {
+  status: number;
+  code?: string;
+  constructor(message: string, status: number, code?: string) { super(message); this.status = status; this.code = code; }
+}
+
 export async function profileRequest(path: string, method = "GET", body?: unknown) {
   const { data, error } = await browserAuth().auth.getSession();
   if (error || !data.session) throw new Error("로그인이 필요합니다.");
@@ -35,6 +41,6 @@ export async function profileRequest(path: string, method = "GET", body?: unknow
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error?.message ?? "요청에 실패했습니다.");
+  if (!response.ok) throw new ApiRequestError(result.error?.message ?? "요청에 실패했습니다.", response.status, result.error?.code);
   return result.data;
 }

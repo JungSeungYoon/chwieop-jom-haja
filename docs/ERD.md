@@ -1,13 +1,29 @@
 # 데이터 구조 — 회원 프로필·비공개 초안
 
-현재 프로필과 비공개 초안을 구현했다. 발행 기록·핀·보관·연결·사진 테이블은 각 기능 구현 단계에서 추가한다.
+현재 프로필·비공개 초안·발행 기록을 구현했다. 핀·보관·연결·사진 테이블은 각 기능 구현 단계에서 추가한다.
 
 ```mermaid
 erDiagram
     AUTH_USERS ||--o| PROFILES : "서비스 프로필 등록"
     PROFILES ||--o{ RECORD_DRAFTS : "비공개 초안 작성"
+    RECORD_DRAFTS ||--o| RECORDS : "명시적 정식 저장"
+    PROFILES ||--o{ RECORDS : "발행 글 소유"
     AUTH_USERS {
         uuid id PK "Supabase Auth 관리"
+    }
+    RECORDS {
+        uuid id PK,FK "원본 초안 ID"
+        uuid owner_id FK "소유자 프로필"
+        text record_type "글 유형"
+        text title "필수 제목"
+        text body "필수 Markdown 본문"
+        jsonb details "선택 안내 항목"
+        text_array tags "태그"
+        text visibility "public private"
+        integer source_version "적용한 초안 버전"
+        integer version "발행본 버전"
+        timestamptz created_at "최초 정식 저장"
+        timestamptz updated_at "마지막 적용"
     }
     RECORD_DRAFTS {
         uuid id PK "초안 ID"
@@ -56,4 +72,14 @@ PostgreSQL 권한과 RLS 정책을 함께 적용한다. 클라이언트가 Next.
 
 익명은 조회·변경 권한이 없다. 회원은 RLS를 통해 본인 행만 조회·생성·수정한다. ID·소유자·버전·시각의 직접 수정과 삭제 권한은 부여하지 않는다. 트리거가 버전과 수정 시각을 변경하고 API는 현재 버전을 조건으로 원자적으로 수정한다. 공개 프로필 조회로 초안이 노출되지 않는다.
 
-두 번째 마이그레이션은 `supabase/migrations/202610050002_record_drafts.sql`이다. 기존 프로필 마이그레이션 다음에 한 번 적용한다. 공개 발행은 별도 기능으로 구현한다.
+두 번째 마이그레이션은 `supabase/migrations/202610050002_record_drafts.sql`이다. 기존 프로필 마이그레이션 다음에 한 번 적용한다.
+
+## 발행본과 원자적 적용
+
+`records`는 초안 하나당 발행본 0개 또는 1개를 갖는다. 초안 저장은 발행본을 변경하지 않는다. 발행 시 초안 콘텐츠를 복사해 공개/비공개 상태로 저장한다. 초안 삭제 시 발행본도 삭제되는 외래 키를 적용했다. 실제 삭제 API는 아직 구현하지 않았다.
+
+익명은 공개 행만, 회원은 공개 행과 본인 비공개 행만 조회한다. INSERT·UPDATE·DELETE 권한은 두 역할 모두에 없다. `apply_record` 함수만 인증 회원에게 실행을 허용한다. `SECURITY DEFINER` 함수에 빈 search_path·명시적 스키마를 적용하고 내부에서 `auth.uid()`·소유자·두 버전을 검증한다. 익명 및 PUBLIC의 실행 권한은 회수했다.
+
+초안 행과 발행본을 잠근 뒤 한 트랜잭션에서 복사하여 초안 저장과 발행 요청이 엇갈리지 않도록 한다. 오래된 요청이 비공개 상태를 다시 공개하는 것도 발행 버전 검사로 차단한다. 원본 초안 버전은 `source_version`에 보관한다.
+
+세 번째 마이그레이션: `supabase/migrations/202610050003_records.sql`. 발행 이력 전체 대신 마지막 적용본만 저장한다.
