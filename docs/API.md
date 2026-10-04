@@ -117,8 +117,8 @@
 
 ## 7. GitHub 로그인 연결 범위
 
-GitHub OAuth는 Supabase Auth의 GitHub Provider를 사용할 계획이다. Supabase 서울 프로젝트 생성과 프로필 테이블·권한 적용은 완료했다. GitHub OAuth 앱 등록·Provider·콜백 URL 설정은 아직 하지 않았다. 실제 로그인·토큰 갱신·로그아웃 UI는 프런트엔드 단계에서 연결한다. 이번 구현은 Supabase가 발급한 사용자 토큰을 검증하는 백엔드다.
+GitHub OAuth는 Supabase Auth의 GitHub Provider를 사용한다. Supabase 서울 프로젝트에 OAuth 앱·Provider·콜백/반환 URL 설정을 완료했다. 개발 전용 `/auth/check`에서 실제 로그인·프로필 등록·수정·로그아웃·재로그인을 확인했다. 최종 로그인 UI와 배포 주소 연결은 프런트엔드 단계에서 진행한다. 백엔드는 Supabase가 발급한 사용자 토큰을 검증한다.
 
-실제 연결 검사에서는 공개 DB 조회 `200`, 미등록 프로필 `404`, 잘못된 주소 `400`, 인증 누락·잘못된 토큰 `401`을 확인했다. 회원의 실제 등록·수정은 GitHub 인증 연결 후 검증한다.
+실제 연결 검사에서는 공개 DB 조회 `200`, 미등록 프로필 `404`, 잘못된 주소 `400`, 인증 누락·잘못된 토큰 `401`을 확인했다. 실제 회원의 등록·수정 후 공개 조회 `200`에서 저장 내용을 확인하고, 새로고침·재로그인 후에도 유지되는 것을 확인했다. 실계정 두 개의 상호 권한 검사와 실제 토큰 갱신은 추후 통합 검증에서 진행한다.
 
 구현에 확인한 문서: [Next.js Route Handlers](https://nextjs.org/docs/app/api-reference/file-conventions/route), [Supabase getUser](https://supabase.com/docs/reference/javascript/auth-getuser), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).

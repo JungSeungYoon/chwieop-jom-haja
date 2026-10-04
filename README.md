@@ -2,7 +2,7 @@
 
 공대생이 프로젝트와 공부 기록을 작성하고, 자신의 포트폴리오와 아카이브를 만드는 웹 서비스.
 
-현재 단계: 백엔드 기능별 구현. 회원 프로필 API를 구현하고 Supabase 서울 프로젝트(`chwieop-jom-haja-seoul`, `ap-northeast-2`)에 프로필 테이블·권한을 적용했습니다. 실제 공개 DB 연결과 비인증 API 응답을 확인했습니다. GitHub 로그인·회원의 실제 등록/수정·프런트엔드·배포 검증은 아직 진행하지 않았습니다.
+현재 단계: 백엔드 기능별 구현. Supabase 서울 프로젝트(`chwieop-jom-haja-seoul`, `ap-northeast-2`)에 프로필 테이블·권한과 GitHub 인증을 연결했습니다. 실제 로그인, 프로필 등록·수정, 새로고침·로그아웃·재로그인 후 데이터 유지를 확인했습니다. 기록 기능·최종 프런트엔드·배포는 후속 단계입니다.
 
 - [개발 계획서](docs/PLAN.md)
 - [기능명세서](docs/FEATURES.md)
@@ -39,7 +39,7 @@ npm run dev
 1. Supabase 프로젝트를 생성합니다.
 2. Settings의 API 설정에서 프로젝트 URL과 publishable key를 확인하여 `.env`의 두 항목에 입력합니다.
 3. SQL Editor에서 `supabase/migrations/202610050001_profiles.sql`을 한 번 실행합니다. 이미 적용한 테이블에 다시 실행하지 않습니다.
-4. GitHub Provider·OAuth 앱·콜백 URL 설정은 다음 연결 단계에서 진행합니다. 임의의 GitHub 토큰은 이 API의 인증 토큰으로 사용할 수 없습니다.
+4. [GitHub 로그인 설정](docs/AUTH_SETUP.md)에 따라 Provider·OAuth 앱·콜백 URL을 연결합니다. 현재 서울 프로젝트는 설정을 완료했습니다. 임의의 GitHub 토큰은 이 API의 인증 토큰으로 사용할 수 없습니다.
 5. 서버를 재시작한 뒤 [API 명세서](docs/API.md)에 따라 요청합니다.
 
 현재 서울 프로젝트에는 프로필 마이그레이션을 SQL Editor로 적용했습니다. 다시 실행하지 않습니다. 도쿄의 초기 프로젝트는 사용하지 않으며 아직 삭제하지 않았습니다. 프로덕션 실행에서는 `NEXT_PUBLIC_` 환경 변수를 바꾼 후 `npm run build`로 다시 빌드합니다.
@@ -81,7 +81,7 @@ npm run check:connection -- http://localhost:3100
 | `tests/*.test.ts` | API 흐름·입력·DB 권한 검증 |
 | `scripts/check-connection.mjs` | 실제 Supabase·로컬 API 연결 확인, 데이터 변경 없음 |
 
-현재 `/` 웹 화면은 제공하지 않습니다. API는 `http://localhost:3000/api/...`에서 실행합니다. 개발 환경에서만 `http://localhost:3000/auth/check`에 로그인·프로필 API 검증 화면을 제공합니다. 실제 GitHub OAuth 앱·Provider 설정은 아직 미완료이며 설정 값과 현재 상태는 로그인 설정 문서를 참고합니다.
+현재 `/` 웹 화면은 제공하지 않습니다. API는 `http://localhost:3000/api/...`에서 실행합니다. 개발 환경에서만 `http://localhost:3000/auth/check`에 로그인·프로필 API 검증 화면을 제공합니다. 실제 GitHub OAuth 앱·Provider 설정을 완료했고 설정 값과 검증 범위는 로그인 설정 문서를 참고합니다.
 
 GitHub: https://github.com/JungSeungYoon/chwieop-jom-haja
 
