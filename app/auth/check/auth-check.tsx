@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { browserAuth, loginWithGitHub, profileRequest } from "../../../lib/browser-auth.ts";
+import DraftCheck from "./draft-check.tsx";
 
 type Profile = { id: string; handle: string; nickname: string; major: string; interests: string; bio: string };
 
@@ -88,6 +89,7 @@ export default function AuthCheck() {
         <button disabled={busy}>{profile ? "프로필 수정" : "프로필 등록"}</button>
       </form>
       {profile && <p>저장된 프로필: <a href={`/api/profiles/${profile.handle}`}>{profile.nickname} / {profile.handle}</a></p>}
+      {profile && <DraftCheck key={profile.id} />}
     </>}
   </main>;
 }

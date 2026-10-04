@@ -49,7 +49,7 @@ export async function authenticate(request: Request) {
   return { client, user: data.user };
 }
 
-export async function readJson(request: Request): Promise<unknown> {
+export async function readJson(request: Request, maxBytes = 8192): Promise<unknown> {
   if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
     throw new ApiError(415, "UNSUPPORTED_MEDIA_TYPE", "Content-Type을 application/json으로 지정해주세요.");
   }
@@ -61,9 +61,9 @@ export async function readJson(request: Request): Promise<unknown> {
     const { value, done } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > 8192) {
+    if (size > maxBytes) {
       await reader.cancel();
-      throw new ApiError(413, "PAYLOAD_TOO_LARGE", "프로필 요청은 8KB 이하로 보내주세요.");
+      throw new ApiError(413, "PAYLOAD_TOO_LARGE", `요청 본문은 ${maxBytes.toLocaleString("en-US")}바이트 이하로 보내주세요.`);
     }
     chunks.push(value);
   }
@@ -85,8 +85,8 @@ export function databaseError(error: { code: string }): never {
     throw new ApiError(409, "PROFILE_CONFLICT", "이미 등록된 프로필이거나 사용 중인 개인 주소입니다.");
   }
   if (["23514", "22001", "22P02"].includes(error.code)) {
-    throw new ApiError(400, "INVALID_INPUT", "프로필 입력을 확인해주세요.");
+    throw new ApiError(400, "INVALID_INPUT", "입력 내용을 확인해주세요.");
   }
   if (error.code === "42501") throw new ApiError(403, "FORBIDDEN", "허용되지 않은 요청입니다.");
-  throw new ApiError(503, "SERVICE_UNAVAILABLE", "프로필 요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.");
+  throw new ApiError(503, "SERVICE_UNAVAILABLE", "저장소 요청을 처리하지 못했습니다. 잠시 후 다시 시도해주세요.");
 }

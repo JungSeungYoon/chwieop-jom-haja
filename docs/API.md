@@ -122,3 +122,48 @@ GitHub OAuth는 Supabase Auth의 GitHub Provider를 사용한다. Supabase 서�
 실제 연결 검사에서는 공개 DB 조회 `200`, 미등록 프로필 `404`, 잘못된 주소 `400`, 인증 누락·잘못된 토큰 `401`을 확인했다. 실제 회원의 등록·수정 후 공개 조회 `200`에서 저장 내용을 확인하고, 새로고침·재로그인 후에도 유지되는 것을 확인했다. 실계정 두 개의 상호 권한 검사와 실제 토큰 갱신은 추후 통합 검증에서 진행한다.
 
 구현에 확인한 문서: [Next.js Route Handlers](https://nextjs.org/docs/app/api-reference/file-conventions/route), [Supabase getUser](https://supabase.com/docs/reference/javascript/auth-getuser), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
+
+## 8. 비공개 초안 저장·조회
+
+모든 초안 API는 인증이 필요하다. 작성자만 조회·수정할 수 있다. 타인 초안은 존재 여부를 노출하지 않고 `404 DRAFT_NOT_FOUND`다. 관리자 키는 사용하지 않는다.
+
+| 메서드·경로 | 동작 | 성공 |
+|---|---|---|
+| `POST /api/drafts` | 새 초안 생성, 프로필 등록 필요 | 201, 전체 초안 |
+| `GET /api/drafts?offset=0` | 본인 목록, 최근 수정 순·동률 ID 오름차순, 20개 | 200, 요약 배열 |
+| `GET /api/drafts/{id}` | 본인 초안 전체 조회 | 200, 전체 초안 |
+| `PUT /api/drafts/{id}` | 기대 버전과 일치할 때 콘텐츠 전체 교체 | 200, 갱신된 전체 초안 |
+
+목록 요약은 `id`, `record_type`, `title`, `tags`, `version`, `created_at`, `updated_at`이다. 빈 목록은 `{ "data": [] }`. `offset`은 0~999999 정수, 초안 ID는 UUID다.
+
+생성 요청 예시:
+
+```json
+{
+  "record_type": "project",
+  "title": "패킷 분석 실습",
+  "body": "## 진행 내용\n\nTCP 패킷을 분석했다.",
+  "details": { "role": "캡처와 패킷 분석", "tools": "Wireshark" },
+  "tags": ["TCP", "보안"]
+}
+```
+
+| 필드 | 입력 규칙 |
+|---|---|
+| `record_type` | 필수, `project`·`study`·`other` |
+| `title` | 최대 200자, 앞뒤 공백 제거, 초안은 빈 제목 허용 |
+| `body` | 최대 100000자 Markdown 문자열, 줄바꿈·탭·들여쓰기 보존 |
+| `details` | 선택 JSON 객체, 값은 각 5000자 이하 문자열 |
+| `tags` | 최대 10개, 각 1~30자, 공백 제거 후 동일 문자열 중복 제거 |
+
+프로젝트 안내 키는 `intro` 소개, `goal` 목표, `role` 내 역할, `tools` 기술·도구·장비, `troubleshooting` 문제와 해결, `result` 결과다. 공부 기록은 `topic` 주제, `resources` 참고 자료, `learned` 이해한 내용, `practice` 실습, `questions` 남은 질문이다. 기타는 빈 객체를 사용한다. 안내 항목은 필수가 아니다.
+
+선택 필드 생략 시 빈 문자열·빈 객체·빈 배열로 저장한다. `null`은 허용하지 않는다. 생성 시 사용자 ID·초안 ID·시각·버전 등 미허용 필드는 `400`이다. 요청 본문은 최대 524288바이트이며 초과 시 `413`이다. 본문은 현재 저장만 제공하고 HTML 렌더링은 하지 않는다. 공개 렌더링 단계에서 안전한 링크·HTML 처리를 적용해야 한다.
+
+전체 응답은 콘텐츠에 `id`, `owner_id`, `version`, `created_at`, `updated_at`을 더한 `{ "data": { ... } }`다. DB가 ID·시각·버전을 설정하고 서버가 인증된 소유자를 지정한다. 최초 버전은 1, 수정마다 1 증가한다.
+
+수정 요청은 위 콘텐츠 전체와 현재 `version`(1~2147483646 정수)을 보낸다. 생략한 선택 콘텐츠는 빈 값으로 교체하므로 부분 수정으로 쓰지 않는다. 서버는 `id + 인증 소유자 + version` 조건을 한 번의 UPDATE에 적용한다. 오래된 버전이면 `409 DRAFT_VERSION_CONFLICT`이며 내용은 변경하지 않는다. 입력을 보관하고 최신 초안을 조회한 뒤 사용자가 다시 저장한다.
+
+생성 POST는 멱등 요청이 아니다. 응답을 잃은 경우 무조건 재생성하지 않고 목록을 확인한다. 수정 성공 응답을 잃은 경우에도 동일 버전의 재시도는 `409`가 될 수 있으므로 최신 초안을 조회한다.
+
+추가 오류는 프로필 미등록 생성 `404 PROFILE_NOT_FOUND`, 없음·타인 초안 `404 DRAFT_NOT_FOUND`, 저장 충돌 `409 DRAFT_VERSION_CONFLICT`다. 인증·JSON·DB 장애는 공통 오류 규칙을 따른다. 초안 삭제·공개 발행·10초 자동 저장 UI는 다음 단계에서 구현한다.
