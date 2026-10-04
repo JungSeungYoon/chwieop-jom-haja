@@ -6,6 +6,7 @@ import { browserAuth, loginWithGitHub, profileRequest } from "../../../lib/brows
 import DraftCheck from "./draft-check.tsx";
 import ArchiveCheck from "./archive-check.tsx";
 import CollectionCheck from "./collection-check.tsx";
+import LinkCheck from "./link-check.tsx";
 
 type Profile = { id: string; handle: string; nickname: string; major: string; interests: string; bio: string };
 
@@ -95,6 +96,7 @@ export default function AuthCheck() {
       {profile && <DraftCheck key={`${profile.id}-${recordsEpoch}`} />}
       {profile && <ArchiveCheck key={profile.id} onChange={() => setRecordsEpoch((value) => value + 1)} />}
       {profile && <CollectionCheck key={`collections-${profile.id}`} owner={profile.id} />}
+      {profile && <LinkCheck key={`links-${profile.id}`} />}
     </>}
   </main>;
 }
