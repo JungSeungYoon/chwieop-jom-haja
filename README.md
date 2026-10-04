@@ -2,7 +2,7 @@
 
 공대생이 프로젝트와 공부 기록을 작성하고, 자신의 포트폴리오와 아카이브를 만드는 웹 서비스.
 
-현재 단계: 백엔드 기능별 구현. Supabase 서울 프로젝트(`chwieop-jom-haja-seoul`, `ap-northeast-2`)에 GitHub 인증·프로필·초안·발행·검색·휴지통·대표 프로젝트 핀·보관함·프로젝트–공부 기록 연결과 GitHub 공개 저장소 가져오기를 구현했습니다. 사진, 최종 프런트엔드·배포는 후속 단계입니다.
+현재 단계: 백엔드 기능별 구현. Supabase 서울 프로젝트(`chwieop-jom-haja-seoul`, `ap-northeast-2`)에 GitHub 인증·프로필·초안·발행·검색·휴지통·대표 프로젝트 핀·보관함·프로젝트–공부 기록 연결·GitHub 공개 저장소 가져오기·사진 업로드와 접근 권한을 구현했습니다. 백엔드 통합 점검, 최종 프런트엔드·배포는 후속 단계입니다.
 
 - [개발 계획서](docs/PLAN.md)
 - [기능명세서](docs/FEATURES.md)
@@ -37,14 +37,14 @@ npm run dev
 ## Supabase 연결 준비
 
 1. Supabase 프로젝트를 생성합니다.
-2. Settings의 API 설정에서 프로젝트 URL과 publishable key를 확인하여 `.env`의 두 항목에 입력합니다.
+2. Settings의 API 설정에서 프로젝트 URL과 publishable key를 확인하여 `.env`에 입력합니다. 사진 검증에는 서버 전용 secret key(또는 legacy service_role key)를 `SUPABASE_SECRET_KEY`에 추가합니다. `NEXT_PUBLIC_` 접두사를 붙이지 않습니다.
 3. SQL Editor에서 `supabase/migrations/`의 SQL 파일을 이름 순서로 각각 한 번 실행합니다. 이미 적용한 마이그레이션은 다시 실행하지 않습니다.
 4. [GitHub 로그인 설정](docs/AUTH_SETUP.md)에 따라 Provider·OAuth 앱·콜백 URL을 연결합니다. 현재 서울 프로젝트는 설정을 완료했습니다. 임의의 GitHub 토큰은 이 API의 인증 토큰으로 사용할 수 없습니다.
 5. 서버를 재시작한 뒤 [API 명세서](docs/API.md)에 따라 요청합니다.
 
-현재 서울 프로젝트에는 프로필·초안·발행본·검색/휴지통·핀/보관함·관련 기록 마이그레이션 6개를 SQL Editor로 적용했습니다. 다시 실행하지 않습니다. 도쿄의 초기 프로젝트는 사용하지 않으며 아직 삭제하지 않았습니다. 프로덕션 실행에서는 `NEXT_PUBLIC_` 환경 변수를 바꾼 후 `npm run build`로 다시 빌드합니다.
+현재 서울 프로젝트에는 사진·Storage 버킷을 포함한 마이그레이션 7개를 SQL Editor로 적용했습니다. 다시 실행하지 않습니다. 도쿄의 초기 프로젝트는 사용하지 않으며 아직 삭제하지 않았습니다. 프로덕션 실행에서는 `NEXT_PUBLIC_` 환경 변수를 바꾼 후 `npm run build`로 다시 빌드합니다.
 
-publishable key는 사용자 인증 토큰을 대신하지 않습니다. 이 백엔드는 관리자 `service_role`/secret 키가 필요하지 않습니다. 실제 설정 값·사용자 토큰은 GitHub에 커밋하지 않습니다. `.env`는 `.gitignore`로 제외하며 `.env.example`에는 빈 설정 항목만 둡니다.
+publishable key는 사용자 인증 토큰을 대신하지 않습니다. 일반 데이터 API는 사용자 JWT와 RLS를 사용합니다. 서버 전용 키는 소유자를 확인한 사진의 검증·WebP 저장·완료 처리에 사용하며 클라이언트에 전달하지 않습니다. 실제 설정 값·사용자 토큰은 GitHub에 커밋하지 않습니다. `.env`는 `.gitignore`로 제외하며 `.env.example`에는 빈 설정 항목만 둡니다.
 
 ## 검증
 
@@ -84,6 +84,8 @@ npm run check:connection -- http://localhost:3100
 | `app/api/pins/route.ts`, `app/api/bookmarks/`, `lib/collection.ts` | 핀 순서 저장·공개 조회, 본인 보관함·입력 검증 |
 | `app/api/links/route.ts`, `app/api/records/[id]/related/route.ts`, `app/api/drafts/[id]/related/route.ts`, `lib/link.ts` | 연결 등록·해제, 양방향 공개/본인 관련 기록 조회 |
 | `app/api/imports/github/route.ts`, `lib/github-import.ts` | 공개 저장소 조회·응답 제한·새 프로젝트 초안 생성 |
+| `app/api/drafts/[id]/images/`, `app/api/images/`, `app/api/records/[id]/images/`, `lib/image.ts` | 직접 업로드 예약·실제 이미지 검증·권한 조회·첨부 해제와 파일 정리 |
+| `supabase/migrations/202610050007_images.sql` | 비공개 Storage 버킷·사진과 발행본 참조·RLS·예약/완료/해제 함수 |
 | `lib/api.ts` | 인증 확인, Supabase 연결, JSON 제한, 공통 응답·오류 |
 | `lib/profile.ts` | 프로필 필드·주소·길이 입력 검증 |
 | `supabase/migrations/202610050001_profiles.sql` | 테이블, 제약, 갱신 트리거, 권한·RLS |

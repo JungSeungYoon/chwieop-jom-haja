@@ -8,6 +8,7 @@ import ArchiveCheck from "./archive-check.tsx";
 import CollectionCheck from "./collection-check.tsx";
 import LinkCheck from "./link-check.tsx";
 import GitHubImportCheck from "./github-import-check.tsx";
+import ImageCheck from "./image-check.tsx";
 
 type Profile = { id: string; handle: string; nickname: string; major: string; interests: string; bio: string };
 
@@ -99,6 +100,7 @@ export default function AuthCheck() {
       {profile && <CollectionCheck key={`collections-${profile.id}`} owner={profile.id} />}
       {profile && <LinkCheck key={`links-${profile.id}`} />}
       {profile && <GitHubImportCheck key={`github-import-${profile.id}`} />}
+      {profile && <ImageCheck key={`images-${profile.id}`} />}
     </>}
   </main>;
 }

@@ -1,16 +1,18 @@
 # 백엔드 API 명세서
 
-현재 구현 범위: 인증 토큰 검증, 회원 프로필 등록·조회·수정. 기록·검색·보관 API는 다음 기능별 구현에서 추가한다.
+사진 API는 아래 18절을 참고한다. 사진을 적용한 발행 응답에는 `data` 외에 `image_cleanup_pending` boolean을 포함한다. 파일 정리가 실패해도 이미 성공한 발행을 실패로 되돌리지 않는다.
+
+현재 구현 범위: GitHub 인증·프로필·초안·발행·검색·휴지통·핀·보관함·관련 기록·GitHub 가져오기·사진 업로드와 접근 권한.
 
 ## 공통 규칙
 
 - 로컬 주소: `http://localhost:3000`.
 - 성공: `{ "data": ... }`, 실패: `{ "error": { "code": "...", "message": "..." } }`.
 - 인증 필요 API는 `Authorization: Bearer <Supabase access_token>`을 사용한다. GitHub 개인 액세스 토큰이 아니다.
-- 서버는 Supabase Auth `getUser(access_token)`으로 사용자를 확인하고, 동일한 토큰으로 DB에 접근한다. 관리자 키로 RLS를 우회하지 않는다.
+- 서버는 Supabase Auth `getUser(access_token)`으로 사용자를 확인하고, 동일한 토큰으로 DB에 접근한다. 사진 검증·변환·완료 처리에만 별도로 서버 전용 키를 사용하며 먼저 사용자 소유권을 확인한다.
 - 변경 요청은 `Content-Type: application/json`, UTF-8 본문 최대 8,192바이트다.
 - 응답은 `Cache-Control: no-store`로 제공한다. DB의 내부 오류·토큰·이메일은 응답에 포함하지 않는다.
-- 현재 API는 같은 사이트의 프런트엔드에서 호출하도록 구성한다. 별도 도메인 CORS 허용과 UI 로그인은 아직 구현하지 않았다.
+- 현재 API는 같은 사이트의 프런트엔드에서 호출하도록 구성한다. 개발용 GitHub 로그인 화면을 제공하며, 별도 도메인 CORS 허용과 최종 UI는 아직 구현하지 않았다.
 
 ## 1. 프로필 입력과 응답
 
@@ -357,3 +359,15 @@ GitHub 토큰·사용자 Supabase 토큰을 GitHub 요청에 전달하지 않는
 | 504 | GITHUB_TIMEOUT | GitHub 8초 시간 제한 초과 |
 
 외부 조회가 모두 성공한 뒤에만 초안을 INSERT한다. 실패가 기존 편집 내용이나 기록을 덮어쓰지 않는다. 응답을 잃은 뒤 같은 요청을 다시 보내면 별도 초안이 생길 수 있으므로 목록을 먼저 확인한다. 자동 재시도·캐시·원본 동기화는 하지 않는다. GitHub 공개 API 한도는 배포 서버 IP의 여러 사용자가 공유할 수 있으며, 제한 시 사용자가 다시 요청한다. 응답은 `Cache-Control: no-store`다. 공개 조회·요청 한도는 [GitHub 공식 API 문서](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)를 따른다.
+
+## 18. 사진 업로드·접근 권한
+
+[사진 API 상세 명세](IMAGES_API.md)에 입력·응답·Storage 직접 업로드·실패와 정리 재시도를 정리했다.
+
+| 경로 | 메서드 | 접근 | 역할 |
+|---|---|---|---|
+| /api/drafts/{id}/images | GET / POST | 본인 | 사진 목록 / 최대 10장 예약 |
+| /api/images/{id}/complete | POST | 본인 | 실제 이미지 검사·WebP 저장·완료 |
+| /api/images/{id} | GET | 공개 적용 사진 또는 본인 | WebP 바이너리 조회 |
+| /api/images/{id} | DELETE | 본인 | 첨부 해제·참조 확인·물리 정리 |
+| /api/records/{id}/images | GET | 공개 발행본 또는 본인 | 마지막 발행본 사진 목록 |

@@ -1,6 +1,6 @@
 # 데이터 구조 — 회원 프로필·비공개 초안
 
-현재 프로필·비공개 초안·발행 기록·핀·보관함·관련 기록 연결을 구현했다. 사진 테이블은 해당 기능 구현 단계에서 추가한다.
+현재 프로필·비공개 초안·발행 기록·핀·보관함·관련 기록 연결·사진을 구현했다. 사진 파일은 private Storage 버킷, 첨부 상태와 발행 참조는 PostgreSQL에 저장한다.
 
 GitHub 가져오기는 기존 `record_drafts`에 새 프로젝트 행을 생성하므로 추가 테이블이나 마이그레이션이 없다. 이름은 title, 설명은 details.intro, 언어 목록은 details.tools와 최대 10개의 tags, README와 원본 URL은 body에 저장한다. 원본 자동 동기화나 별도 불변 출처 필드는 없으며 저장 후 일반 초안처럼 편집·발행한다.
 
@@ -10,6 +10,24 @@ erDiagram
     PROFILES ||--o{ RECORD_DRAFTS : "비공개 초안 작성"
     RECORD_DRAFTS ||--o| RECORDS : "명시적 정식 저장"
     PROFILES ||--o{ RECORDS : "발행 글 소유"
+    RECORD_DRAFTS ||--o{ IMAGES : "사진 예약과 초안 첨부"
+    PROFILES ||--o{ IMAGES : "사진 소유자"
+    RECORDS ||--o{ RECORD_IMAGES : "마지막 적용 사진"
+    IMAGES ||--o| RECORD_IMAGES : "발행 참조"
+    IMAGES {
+        uuid id PK "사진 ID"
+        uuid draft_id FK "소속 초안"
+        uuid owner_id FK "사진 소유자"
+        text mime_type "원본 MIME"
+        integer byte_size "원본 크기 1~5242880"
+        boolean ready "서버 검증 완료"
+        boolean attached "초안에 첨부 또는 예약"
+        timestamptz created_at "예약 시각"
+    }
+    RECORD_IMAGES {
+        uuid record_id PK,FK "발행본"
+        uuid image_id PK,FK "적용한 사진"
+    }
     PROFILES ||--o{ PROJECT_PINS : "대표 프로젝트 순서"
     RECORDS ||--o| PROJECT_PINS : "본인 공개 프로젝트 고정"
     PROFILES ||--o{ BOOKMARKS : "본인 보관함"
@@ -134,3 +152,15 @@ PostgreSQL 권한과 RLS 정책을 함께 적용한다. 클라이언트가 Next.
 RLS는 본인의 연결 또는 양쪽 발행본이 모두 공개·정상이며 유형과 소유자가 맞는 연결만 허용한다. `list_public_related`는 공개 발행본만, `list_own_related`는 본인 최신 초안만 반환한다. 연결 요약·개수는 각 조회에서 허용된 결과만 기준으로 삼으며 비공개 제목·초안 내용은 공개 조회에서 제외한다.
 
 휴지통·비공개 전환은 참조를 유지하지만 목록에서 필터링한다. 복원·재공개 후 조건을 만족하면 다시 나타난다. 초안 유형 변경 트리거는 기존 연결을 해제하므로 기존 공개본의 연결도 즉시 사라질 수 있다. 연결은 본문 발행 버전과 분리된 메타데이터이며 자동 재연결하지 않는다. 회원·초안을 물리 삭제하면 FK cascade로 연결도 제거한다.
+
+## 사진·Storage와 발행 스냅샷
+
+일곱 번째 마이그레이션은 `202610050007_images.sql`이다. private `record-images` 버킷에 5MiB와 JPEG·PNG·WebP MIME 제한을 설정한다. 경로는 `owner_id/draft_id/image_id.upload`(원본)와 같은 접두사의 `.webp`(검증본)이며 클라이언트가 임의 경로를 지정하지 않는다.
+
+`images.ready`는 서버 검증 완료, `attached`는 초안 첨부 상태다. 업로드 중 예약도 슬롯을 차지한다. reserve_image는 활성 초안을 잠가 최신 버전·소유자·10장 제한을 검증한다. complete_image는 service_role만 호출하며 사진 저장 확인 후 ready 변경과 초안 버전 증가를 수행한다. 사진 테이블의 직접 쓰기는 회원에게 허용하지 않는다.
+
+사진 RLS는 본인의 행 또는 공개·정상 발행본 record_images에 참조된 완료 사진만 노출한다. Storage 원본 INSERT는 미완료·활성 예약 소유자만, 원본 SELECT는 소유자만 허용한다. 검증본 INSERT·UPDATE는 서버 전용 키만 가능하며 공개 SELECT는 동일한 발행 참조 조건을 따른다. 파일의 확장자·선언 MIME만 신뢰하지 않고 서버에서 디코딩·재인코딩한다.
+
+기존 apply_record를 내부 apply_record_content로 이름 변경하고 회원의 직접 실행 권한을 회수했다. 새 apply_record는 기존 잠금·버전·소유자 검사를 재사용한 뒤 같은 트랜잭션에서 record_images를 완료·첨부 사진으로 교체한다. 초안에서 사진을 해제해도 적용 전 발행 참조는 보존한다. 비공개/휴지통 전환 시 RLS가 방문자 조회를 차단하며 복원을 위해 참조는 유지한다.
+
+해제 사진에 발행 참조가 없을 때만 Storage API로 파일을 지우고 purge_image로 메타데이터를 제거한다. purge_image는 Storage 객체와 발행 참조가 실제로 없는지도 검사한다. SQL DELETE로 Storage 메타데이터만 지우지 않는다. 실패한 정리는 재시도 대상으로 표시한다. 사진 정리와 DB·Storage는 서로 다른 시스템이므로 단일 트랜잭션이 아니며, 중단된 예약의 자동 만료·계정 탈퇴에 따른 파일 청소는 별도 확장 범위다.

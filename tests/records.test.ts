@@ -29,7 +29,7 @@ test("발행 입력·API: 버전·범위 검증, RPC 오류 변환, 익명/인�
   const request = (body = valid) => new Request("http://localhost/api/drafts/id/publish", { method: "POST", headers: { Authorization: "Bearer test-token", "Content-Type": "application/json" }, body: JSON.stringify(body) });
   try {
     assert.equal((await POST(new Request("http://localhost", { method: "POST" }), context)).status, 401);
-    replies = [{ data: user }, { data: { id, visibility: "public", version: 1 } }];
+    replies = [{ data: user }, { data: { id, visibility: "public", version: 1 } }, { data: [] }];
     assert.equal((await POST(request(), context)).status, 201);
     assert.equal(calls[1].url.pathname, "/rest/v1/rpc/apply_record");
     assert.deepEqual(JSON.parse(String(calls[1].init?.body)), { p_draft_id: id, p_draft_version: 1, p_record_version: 0, p_visibility: "public" });
