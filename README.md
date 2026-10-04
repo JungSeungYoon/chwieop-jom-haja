@@ -2,7 +2,7 @@
 
 공대생이 프로젝트와 공부 기록을 작성하고, 자신의 포트폴리오와 아카이브를 만드는 웹 서비스.
 
-현재 단계: 백엔드 기능별 구현. 첫 기능인 회원 프로필 등록·조회·수정 API와 DB 마이그레이션을 작성했습니다. 실제 Supabase 프로젝트 연결·GitHub 로그인·프런트엔드·배포는 아직 진행하지 않았습니다.
+현재 단계: 백엔드 기능별 구현. 회원 프로필 API를 구현하고 Supabase 서울 프로젝트(`chwieop-jom-haja-seoul`, `ap-northeast-2`)에 프로필 테이블·권한을 적용했습니다. 실제 공개 DB 연결과 비인증 API 응답을 확인했습니다. GitHub 로그인·회원의 실제 등록/수정·프런트엔드·배포 검증은 아직 진행하지 않았습니다.
 
 - [개발 계획서](docs/PLAN.md)
 - [기능명세서](docs/FEATURES.md)
@@ -41,6 +41,8 @@ npm run dev
 4. GitHub Provider·OAuth 앱·콜백 URL 설정은 다음 연결 단계에서 진행합니다. 임의의 GitHub 토큰은 이 API의 인증 토큰으로 사용할 수 없습니다.
 5. 서버를 재시작한 뒤 [API 명세서](docs/API.md)에 따라 요청합니다.
 
+현재 서울 프로젝트에는 프로필 마이그레이션을 SQL Editor로 적용했습니다. 다시 실행하지 않습니다. 도쿄의 초기 프로젝트는 사용하지 않으며 아직 삭제하지 않았습니다. 프로덕션 실행에서는 `NEXT_PUBLIC_` 환경 변수를 바꾼 후 `npm run build`로 다시 빌드합니다.
+
 publishable key는 사용자 인증 토큰을 대신하지 않습니다. 이 백엔드는 관리자 `service_role`/secret 키가 필요하지 않습니다. 실제 설정 값·사용자 토큰은 GitHub에 커밋하지 않습니다. `.env`는 `.gitignore`로 제외하며 `.env.example`에는 빈 설정 항목만 둡니다.
 
 ## 검증
@@ -57,6 +59,14 @@ npm start
 - 위 테스트는 호스팅된 Supabase의 OAuth·PostgREST 연동 검증을 대신하지 않습니다. 실제 연결 후 별도로 확인합니다.
 - `.env`·의존성·빌드 파일은 Git 추적에서 제외합니다.
 
+실제 연결 확인은 서버를 실행한 상태에서 별도 터미널로 수행합니다. 데이터를 추가·변경하지 않고 공개 조회와 인증 거부 응답을 검사합니다.
+
+```powershell
+npm run check:connection
+# 서버를 다른 포트로 실행했다면:
+npm run check:connection -- http://localhost:3100
+```
+
 ## 현재 파일 역할
 
 | 파일 | 역할 |
@@ -68,6 +78,7 @@ npm start
 | `lib/profile.ts` | 프로필 필드·주소·길이 입력 검증 |
 | `supabase/migrations/202610050001_profiles.sql` | 테이블, 제약, 갱신 트리거, 권한·RLS |
 | `tests/*.test.ts` | API 흐름·입력·DB 권한 검증 |
+| `scripts/check-connection.mjs` | 실제 Supabase·로컬 API 연결 확인, 데이터 변경 없음 |
 
 현재 `/` 웹 화면은 제공하지 않습니다. API는 `http://localhost:3000/api/...`에서 실행합니다.
 
