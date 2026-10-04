@@ -1,0 +1,41 @@
+# GitHub 로그인 연결
+
+현재 상태: PKCE 로그인 코드와 개발용 검증 화면 준비, GitHub OAuth 앱 등록 폼 입력 완료. 최종 OAuth 앱 등록과 Supabase Provider 설정은 미완료다.
+
+## 설정할 값
+
+| 위치 | 항목 | 값 |
+|---|---|---|
+| GitHub OAuth App | Application name | 취업좀하자 |
+| GitHub OAuth App | Homepage URL | `http://localhost:3000` |
+| GitHub OAuth App | Authorization callback URL | `https://vstocgnybjuubtqlujsr.supabase.co/auth/v1/callback` |
+| GitHub OAuth App | Enable Device Flow | 사용하지 않음 |
+| Supabase → Sign In / Providers → GitHub | Client ID / Secret | 등록한 OAuth 앱의 값 |
+| Supabase → URL Configuration | Site URL | `http://localhost:3000` |
+| Supabase → URL Configuration | Redirect URL | `http://localhost:3000/auth/check` |
+
+Client Secret은 Supabase의 GitHub Provider 설정에만 입력한다. GitHub·블로그·프런트엔드·`.env.example`에 저장하지 않는다. 이 서비스의 브라우저 코드는 공개 키만 사용한다. 배포 주소가 정해지면 앱 홈페이지·Site URL·프런트엔드 콜백 주소를 배포 주소에 맞게 변경한다. GitHub에서 Supabase로 돌아오는 callback URL과 Supabase에서 사이트로 돌아오는 redirect URL은 다르다.
+
+## 구현 흐름
+
+1. `/auth/check`에서 GitHub로 로그인한다.
+2. Supabase JS 클라이언트가 PKCE 검증값을 보관하고 Supabase Auth를 통해 GitHub 인증 화면으로 이동한다.
+3. GitHub 인증 후 Supabase callback을 거쳐 `/auth/check`로 돌아온다.
+4. SDK가 인증 코드를 세션으로 교환한다. 로그인 요청은 `read:user user:email`만 사용하고 저장소 권한을 요구하지 않는다.
+5. 사용자 access token으로 `/api/me`를 호출한다. 등록 여부에 따라 프로필을 최초 등록하거나 수정한다.
+6. SDK가 세션 유지·갱신을 처리한다. 검증 화면에서 로그아웃하면 해당 브라우저의 세션을 종료한다.
+
+`/auth/check`는 개발 환경 전용 임시 화면이다. `npm run dev`에서만 제공하고 프로덕션 빌드에서는 404를 반환한다. 최종 프런트엔드에서 로그인 화면과 반환 경로를 연결한다. UI에 토큰·이메일·Client Secret을 출력하지 않는다.
+
+## 실제 연결 후 검사할 항목
+
+- GitHub 로그인 성공, 취소·실패 상태
+- 최초 로그인 시 프로필 미등록 상태
+- 프로필 등록·부분 수정·주소 중복
+- 새로고침·재로그인 후 DB에 저장된 프로필 유지
+- 로그아웃 후 인증 API 접근 거부
+- 타인 프로필 수정 거부
+
+아직 위 항목을 실제 회원 계정으로 검증하지 않았다. 로컬 모의 테스트 12개, 타입 검사와 빌드는 통과했다.
+
+공식 연결 방법: [Supabase GitHub 로그인](https://supabase.com/docs/guides/auth/social-login/auth-github).

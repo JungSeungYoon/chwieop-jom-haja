@@ -8,6 +8,7 @@
 - [기능명세서](docs/FEATURES.md)
 - [API 명세서](docs/API.md)
 - [ERD와 DB 권한](docs/ERD.md)
+- [GitHub 로그인 설정·검증](docs/AUTH_SETUP.md)
 - [블로그 게시 자료](docs/blog/README.md)
 - 프로젝트 / 공부 기록 / 기타를 구분한 항목 안내형 작성 + 자유 본문
 - 공개·비공개, 대표 프로젝트 핀, 보관함, 검색, 프로젝트–공부 기록 연결
@@ -80,7 +81,7 @@ npm run check:connection -- http://localhost:3100
 | `tests/*.test.ts` | API 흐름·입력·DB 권한 검증 |
 | `scripts/check-connection.mjs` | 실제 Supabase·로컬 API 연결 확인, 데이터 변경 없음 |
 
-현재 `/` 웹 화면은 제공하지 않습니다. API는 `http://localhost:3000/api/...`에서 실행합니다.
+현재 `/` 웹 화면은 제공하지 않습니다. API는 `http://localhost:3000/api/...`에서 실행합니다. 개발 환경에서만 `http://localhost:3000/auth/check`에 로그인·프로필 API 검증 화면을 제공합니다. 실제 GitHub OAuth 앱·Provider 설정은 아직 미완료이며 설정 값과 현재 상태는 로그인 설정 문서를 참고합니다.
 
 GitHub: https://github.com/JungSeungYoon/chwieop-jom-haja
 
