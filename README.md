@@ -2,12 +2,13 @@
 
 공대생이 프로젝트와 공부 기록을 작성하고, 자신의 포트폴리오와 아카이브를 만드는 웹 서비스.
 
-현재 단계: 백엔드 기능별 구현. Supabase 서울 프로젝트(`chwieop-jom-haja-seoul`, `ap-northeast-2`)에 GitHub 인증·프로필·초안·발행·검색·휴지통·대표 프로젝트 핀·보관함·프로젝트–공부 기록 연결·GitHub 공개 저장소 가져오기·사진 업로드와 접근 권한을 구현했습니다. 백엔드 통합 점검, 최종 프런트엔드·배포는 후속 단계입니다.
+현재 단계: 백엔드 구현·통합 점검 완료. Supabase 서울 프로젝트(`chwieop-jom-haja-seoul`, `ap-northeast-2`)에 GitHub 인증·프로필·초안·발행·검색·휴지통·대표 프로젝트 핀·보관함·프로젝트–공부 기록 연결·GitHub 공개 저장소 가져오기·사진 업로드와 접근 권한을 구현했습니다. 자동 테스트 34개와 개발·프로덕션 서버의 실제 연결 검사를 통과했습니다. 최종 프런트엔드·배포는 후속 단계입니다.
 
 - [개발 계획서](docs/PLAN.md)
 - [기능명세서](docs/FEATURES.md)
 - [API 명세서](docs/API.md)
 - [ERD와 DB 권한](docs/ERD.md)
+- [백엔드 통합 점검과 검증 범위](docs/BACKEND_CHECK.md)
 - [GitHub 로그인 설정·검증](docs/AUTH_SETUP.md)
 - [블로그 게시 자료](docs/blog/README.md)
 - 프로젝트 / 공부 기록 / 기타를 구분한 항목 안내형 작성 + 자유 본문
