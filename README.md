@@ -18,3 +18,5 @@
 현재 실행할 애플리케이션은 없습니다. 구현 단계에서 설치·실행 방법과 환경 변수 설정을 작성합니다. 비밀 API 키와 사용자 토큰은 커밋하지 않습니다.
 
 GitHub: https://github.com/JungSeungYoon/chwieop-jom-haja
+
+개발 기록: https://iamjsy.tistory.com/3
