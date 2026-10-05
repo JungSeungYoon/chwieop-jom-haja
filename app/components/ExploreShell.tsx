@@ -87,9 +87,9 @@ export default function ExploreShell({ demo, children }: { demo: boolean; childr
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:p-3">본문으로 건너뛰기</a>
       <header className="border-b border-zinc-200">
         <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3 sm:px-8">
-          <div className="flex min-w-0 flex-wrap items-center gap-4 sm:gap-10">
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-4 sm:gap-10 lg:w-auto">
             <Link href={demo ? "/?demo=1" : "/"} className="shrink-0 whitespace-nowrap text-lg font-bold tracking-tight">취업좀하자<span className="ml-0.5 text-zinc-400">.</span></Link>
-            <nav aria-label="주 메뉴" className="flex flex-wrap gap-4 text-sm font-medium text-zinc-600"><Link href={demo ? "/?demo=1" : "/"} className="text-zinc-900">탐색</Link>{!demo && session && <><Link href="/archive">내 아카이브</Link><Link href="/bookmarks">보관함</Link>{handle && <Link href={`/u/${handle}`}>내 포트폴리오</Link>}<Link href="/settings/pins">대표 프로젝트</Link></>}</nav>
+            <nav aria-label="주 메뉴" className="flex w-full min-w-0 flex-wrap gap-4 text-sm font-medium text-zinc-600 sm:w-auto"><Link href={demo ? "/?demo=1" : "/"} className="text-zinc-900">탐색</Link>{!demo && session && <><Link href="/archive">내 아카이브</Link><Link href="/bookmarks">보관함</Link>{handle && <Link href={`/u/${handle}`}>내 포트폴리오</Link>}<Link href="/settings/pins">대표 프로젝트</Link></>}</nav>
           </div>
           <div className="flex items-center gap-3">
             {demo ? <Link className={buttonClass} href="/?demo=0">실제 피드 <ArrowUpRight className="h-4 w-4" /></Link> : session ? <>
