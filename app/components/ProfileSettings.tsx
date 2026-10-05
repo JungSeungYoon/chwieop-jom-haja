@@ -13,7 +13,7 @@ export default function ProfileSettings() {
     return () => { active = false; };
   }, [viewer.id, revision]);
   async function save() { setBusy(true); setNotice(''); try { const input = parseProfile(form, exists ? 'update' : 'create'); await memberRequest(viewer.id!, '/api/profiles', exists ? 'PATCH' : 'POST', input); setExists(true); viewer.refreshProfile(); setNotice('프로필을 저장했습니다.'); } catch (error) { setNotice(errorMessage(error)); } finally { setBusy(false); } }
-  return <main id="main" className="mx-auto max-w-2xl px-5 pt-12"><p className="text-xs font-mono text-zinc-500">YOUR IDENTITY</p><h1 className="mt-3 mb-8 text-3xl font-semibold">프로필 설정</h1>
+  return <main id="main" className="mx-auto max-w-2xl px-5 pt-12"><p className="text-xs font-mono text-zinc-500">내 정보</p><h1 className="mt-3 mb-8 text-3xl font-semibold">프로필 설정</h1>
     {notice && <p role="status" className="mb-5 text-sm">{notice}</p>}{!loaded ? <button type="button" className={primaryClass} onClick={() => setRevision(value => value + 1)}>프로필 다시 불러오기</button> : <form onSubmit={event => { event.preventDefault(); void save(); }} className="space-y-5">{(Object.keys(empty) as (keyof typeof empty)[]).map(key => <label key={key} className="block text-sm font-medium">{labels[key]}<input disabled={busy} required={key === 'handle' || key === 'nickname'} value={form[key]} onChange={event => setForm(previous => ({ ...previous, [key]: event.target.value }))} className="mt-2 w-full rounded-md border border-zinc-200 p-3 font-normal" /></label>)}<p className="text-xs leading-6 text-zinc-500">개인 주소는 영문 소문자·숫자·하이픈 3~30자입니다. 닉네임은 2~30자입니다.</p><button type="submit" disabled={busy} className={primaryClass}>{busy ? '저장 중…' : '프로필 저장'}</button></form>}
   </main>;
 }

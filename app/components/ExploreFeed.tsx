@@ -59,13 +59,13 @@ export default function ExploreFeed({ demo }: { demo: boolean }) {
   const filtered = !!(query.query || query.type || query.tags.length);
   return <main id="main" className="mx-auto max-w-6xl border-x border-zinc-100 px-5 pb-4 sm:px-8">
     <section className="relative border-b border-zinc-200 py-14 sm:py-20">
-      <span className="mb-5 block font-mono text-[11px] tracking-[.2em] text-zinc-500">ENGINEERING ARCHIVE / EXPLORE</span>
-      <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">만들고, 배우고.<br /><span className="text-zinc-400">다음 가능성을 기록하다.</span></h1>
-      <p className="mt-6 max-w-md text-sm leading-7 text-zinc-600 sm:text-base">프로젝트와 공부 기록에서 다음 아이디어를 찾아보세요.</p>
+      <span className="mb-5 block font-mono text-[11px] tracking-[.2em] text-zinc-500">프로젝트 · 공부 기록</span>
+      <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">프로젝트와 공부 기록,<br /><span className="text-zinc-400">한곳에 모아보세요.</span></h1>
+      <p className="mt-6 max-w-md text-sm leading-7 text-zinc-600 sm:text-base">진행한 프로젝트와 공부한 내용을 정리하고 공유하세요.</p>
       <div className="mt-8 flex items-center gap-2 text-xs text-zinc-500"><span className="h-1.5 w-1.5 rounded-full bg-zinc-900" /> 프로젝트 · 공부 기록 · 기타</div>
     </section>
     <section aria-label="기록 탐색" className="pt-8">
-      <div className="mb-5 flex items-center justify-between"><h2 className="text-sm font-semibold">공개 기록 탐색</h2><span className="font-mono text-[10px] text-zinc-500">최근 업데이트 순</span></div>
+      <div className="mb-5 flex items-center justify-between"><h2 className="text-sm font-semibold">다른 사람의 기록</h2><span className="font-mono text-[10px] text-zinc-500">최근 수정순</span></div>
       <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
         <div className="min-w-0 flex-1 basis-72"><label htmlFor="search" className="mb-2 block text-xs text-zinc-600">검색어</label><div className="relative"><Search aria-hidden="true" className="absolute left-3 top-3 h-4 w-4 text-zinc-400" /><input id="search" type="search" maxLength={100} value={searchText} onChange={event => setSearchText(event.target.value)} placeholder="제목, 본문, 기술 태그 검색" className="h-10 w-full rounded-md border border-zinc-200 py-2 pl-9 pr-3 text-sm" /></div></div>
         <div className="min-w-0 flex-1 basis-52"><label htmlFor="tag" className="mb-2 block text-xs text-zinc-600">기술 태그</label><input id="tag" value={tagInput} onChange={event => setTagInput(event.target.value)} placeholder="예: Python, Security" className="h-10 w-full rounded-md border border-zinc-200 px-3 text-sm" /></div>

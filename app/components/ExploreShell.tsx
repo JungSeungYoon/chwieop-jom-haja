@@ -109,7 +109,7 @@ export default function ExploreShell({ demo, children }: { demo: boolean; childr
       {children}
       <footer className="mt-20 border-t border-zinc-200">
         <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 px-5 py-7 text-xs text-zinc-500 sm:px-8">
-          <span>취업좀하자 · 오늘의 기록이 내일의 가능성으로.</span><span className="font-mono">BUILD. LEARN. ARCHIVE.</span>
+          <span>취업좀하자</span><span className="font-mono">프로젝트와 공부 기록을 정리하는 곳</span>
         </div>
       </footer>
     </div>
