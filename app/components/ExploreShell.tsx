@@ -7,7 +7,7 @@ import { ArrowUpRight, LogIn, Loader2 } from "lucide-react";
 import { browserAuth, loginWithGitHub } from "../../lib/browser-auth.ts";
 import { apiRequest, errorMessage, object } from "../../lib/explore-data.ts";
 
-type Viewer = { ready: boolean; id?: string; token?: string; nickname?: string; profile: "none" | "checking" | "ready" | "missing" | "error"; refreshProfile: () => void };
+type Viewer = { ready: boolean; id?: string; token?: string; nickname?: string; handle?: string; profile: "none" | "checking" | "ready" | "missing" | "error"; refreshProfile: () => void };
 const ViewerContext = createContext<Viewer>({ ready: false, profile: "none", refreshProfile: () => {} });
 export const useViewer = () => useContext(ViewerContext);
 export const buttonClass = "inline-flex items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-50";
@@ -17,7 +17,7 @@ export default function ExploreShell({ demo, children }: { demo: boolean; childr
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(demo);
   const [profile, setProfile] = useState<Viewer["profile"]>("none");
-  const [nickname, setNickname] = useState<string>();
+  const [nickname, setNickname] = useState<string>(); const [handle, setHandle] = useState<string>();
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [profileRevision, setProfileRevision] = useState(0);
@@ -51,8 +51,8 @@ export default function ExploreShell({ demo, children }: { demo: boolean; childr
   }, [demo, configured]);
 
   useEffect(() => {
-    if (!session) { setProfile("none"); setNickname(undefined); profileUser.current = undefined; return; }
-    if (profileUser.current !== session.user.id) { setNickname(undefined); setProfile("checking"); }
+    if (!session) { setProfile("none"); setNickname(undefined); setHandle(undefined); profileUser.current = undefined; return; }
+    if (profileUser.current !== session.user.id) { setNickname(undefined); setHandle(undefined); setProfile("checking"); }
     profileUser.current = session.user.id;
     const controller = new AbortController();
     void apiRequest("/api/me", session.access_token, controller.signal).then(result => {
@@ -62,7 +62,7 @@ export default function ExploreShell({ demo, children }: { demo: boolean; childr
       else {
         const profileData = object(data.profile);
         if (typeof profileData.nickname !== "string") throw new Error("프로필 응답을 확인하지 못했습니다.");
-        setNickname(profileData.nickname); setProfile("ready");
+        if (typeof profileData.handle !== "string") throw new Error("개인 주소를 확인하지 못했습니다."); setHandle(profileData.handle); setNickname(profileData.nickname); setProfile("ready");
       }
     }).catch(error => { if (!controller.signal.aborted) { setProfile("error"); setNotice(errorMessage(error)); } });
     return () => controller.abort();
@@ -77,19 +77,19 @@ export default function ExploreShell({ demo, children }: { demo: boolean; childr
     try {
       const { error } = await browserAuth().auth.signOut({ scope: "local" });
       if (error) throw new Error("로그아웃에 실패했습니다. 다시 시도해주세요.");
-      setSession(null); setNickname(undefined); setNotice("로그아웃했습니다.");
+      setSession(null); setNickname(undefined); setHandle(undefined); setNotice("로그아웃했습니다.");
     } catch (error) { setNotice(errorMessage(error)); }
     finally { setBusy(false); }
   }
 
-  return <ViewerContext.Provider value={{ ready, id: session?.user.id, token: session?.access_token, nickname, profile, refreshProfile: () => setProfileRevision(value => value + 1) }}>
+  return <ViewerContext.Provider value={{ ready, id: session?.user.id, token: session?.access_token, nickname, handle, profile, refreshProfile: () => setProfileRevision(value => value + 1) }}>
     <div className="min-h-screen bg-white font-sans">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:p-3">본문으로 건너뛰기</a>
       <header className="border-b border-zinc-200">
         <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3 sm:px-8">
           <div className="flex items-center gap-6 sm:gap-10">
             <Link href={demo ? "/?demo=1" : "/"} className="text-lg font-bold tracking-tight">취업좀하자<span className="ml-0.5 text-zinc-400">.</span></Link>
-            <nav aria-label="주 메뉴" className="flex flex-wrap gap-4 text-sm font-medium text-zinc-600"><Link href={demo ? "/?demo=1" : "/"} className="text-zinc-900">탐색</Link>{!demo && session && <Link href="/archive">내 아카이브</Link>}</nav>
+            <nav aria-label="주 메뉴" className="flex flex-wrap gap-4 text-sm font-medium text-zinc-600"><Link href={demo ? "/?demo=1" : "/"} className="text-zinc-900">탐색</Link>{!demo && session && <><Link href="/archive">내 아카이브</Link><Link href="/bookmarks">보관함</Link>{handle && <Link href={`/u/${handle}`}>내 포트폴리오</Link>}<Link href="/settings/pins">대표 프로젝트</Link></>}</nav>
           </div>
           <div className="flex items-center gap-3">
             {demo ? <Link className={buttonClass} href="/?demo=0">실제 피드 <ArrowUpRight className="h-4 w-4" /></Link> : session ? <>

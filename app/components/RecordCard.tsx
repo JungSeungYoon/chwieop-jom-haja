@@ -19,7 +19,7 @@ export default function RecordCard({ post, demo, onSaved }: { post: FeedPost; de
     <div className="mt-auto flex items-end justify-between gap-2 border-t border-zinc-100 pt-4">
       <div className="flex min-w-0 items-center gap-2.5">
         <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-xs text-zinc-600">{Array.from(post.author.nickname)[0]}</span>
-        <div className="min-w-0"><p className="truncate text-xs font-medium text-zinc-700">{post.author.nickname}</p><time className="font-mono text-[10px] text-zinc-500" dateTime={post.createdAt}>{formatDate(post.createdAt)}</time></div>
+        <div className="min-w-0"><Link href={demo ? `/?demo=1` : `/u/${post.author.handle}`} className="block truncate text-xs font-medium text-zinc-700 hover:underline">{post.author.nickname}</Link><time className="font-mono text-[10px] text-zinc-500" dateTime={post.createdAt}>{formatDate(post.createdAt)}</time></div>
       </div>
       <BookmarkButton post={post} demo={demo} onSaved={onSaved} />
     </div>
