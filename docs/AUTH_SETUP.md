@@ -46,3 +46,7 @@ Client Secret은 Supabase의 GitHub Provider 설정에만 입력한다. GitHub·
 등록한 프로필은 검증 후에도 DB에 유지한다. 초기 닉네임·주소·소개는 변경할 수 있다. 토큰과 이메일은 검증 기록에 출력하지 않았다.
 
 공식 연결 방법: [Supabase GitHub 로그인](https://supabase.com/docs/guides/auth/social-login/auth-github).
+
+## 운영 배포 설정
+
+운영 GitHub 로그인과 프로필 복원을 확인했다. Site URL은 https://chwieop-jom-haja.vercel.app 이며 운영 루트와 로컬 루트를 Redirect URLs에 등록했다. 위 표는 초기 로컬 설정 기록이다. 현재 적용 값과 검증 범위는 [DEPLOYMENT.md](DEPLOYMENT.md)를 참고한다. GitHub OAuth 홈페이지 표시 주소는 기존 로컬 값, Supabase callback은 그대로 유지했다.

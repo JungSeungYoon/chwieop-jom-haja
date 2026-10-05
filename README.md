@@ -2,7 +2,7 @@
 
 공대생이 프로젝트와 공부 기록을 작성하고, 자신의 포트폴리오와 아카이브를 만드는 웹 서비스.
 
-현재 단계: 백엔드와 탐색 피드·최소 기록 상세 화면 구현 완료. Supabase 서울 프로젝트(`chwieop-jom-haja-seoul`, `ap-northeast-2`)의 실제 API에 검색·유형/태그 필터·페이지 조회·보관·GitHub 로그인과 기록 상세를 연결했습니다. 자동 테스트 42개, 타입 검사·빌드와 프로덕션 연결 검사를 통과했습니다. 내 아카이브·프로필 설정·Markdown 작성기와 10초 자동 저장·사진·공개/비공개 발행을 추가했습니다. 개인 포트폴리오·핀/보관함·기록 연결 관리 화면과 배포는 후속 단계입니다.
+현재 단계: 백엔드와 탐색 피드·최소 기록 상세 화면 구현 완료. Supabase 서울 프로젝트(`chwieop-jom-haja-seoul`, `ap-northeast-2`)의 실제 API에 검색·유형/태그 필터·페이지 조회·보관·GitHub 로그인과 기록 상세를 연결했습니다. 자동 테스트 42개, 타입 검사·빌드와 프로덕션 연결 검사를 통과했습니다. 내 아카이브·프로필 설정·Markdown 작성기와 10초 자동 저장·사진·공개/비공개 발행을 추가했습니다. Vercel 운영 배포와 GitHub 로그인·비공개 저장·사진 검증을 완료했습니다. 개인 포트폴리오·핀/보관함·기록 연결 관리 화면은 후속 단계입니다.
 
 - [개발 계획서](docs/PLAN.md)
 - [기능명세서](docs/FEATURES.md)
@@ -116,6 +116,10 @@ npm run check:connection -- http://localhost:3100
 GitHub: https://github.com/JungSeungYoon/chwieop-jom-haja
 
 개발 기록: https://iamjsy.tistory.com/3
+
+배포 주소: https://chwieop-jom-haja.vercel.app
+
+배포 설정과 검증: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 
 ## 회원 작업 화면
 
