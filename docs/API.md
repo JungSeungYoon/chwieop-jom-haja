@@ -393,3 +393,21 @@ GitHub 토큰·사용자 Supabase 토큰을 GitHub 요청에 전달하지 않는
 `GET /api/records/{id}?feed=1`은 공개 기록 상세에 위 필드와 `excerpt`를 추가한다. 본인의 비공개 기록을 조회할 권한은 기존 API 규칙대로 유지하지만 공개 카드 메타데이터는 붙이지 않는다. 탐색 상세 UI는 공개 기록만 표시하고 비공개이면 안내한다. 공개 관련 기록은 기존 `/api/records/{id}/related?offset=N`을 사용한다.
 
 데모는 브라우저 화면의 별도 모드다. 서버 API가 샘플 데이터를 반환하거나 실제 실패를 Mock으로 바꾸지 않는다. 마이그레이션 `202610050008_feed_metadata.sql`을 기존 7개 뒤에 적용한다. 서울 프로젝트에는 적용을 완료했으므로 다시 실행하지 않는다.
+
+## 회원 작업 화면의 API 사용
+
+이번 단계는 기존 API를 연결하며 DB 필드·URL·응답 규격을 변경하지 않는다. 새 마이그레이션은 없다.
+
+| 화면 | 요청 흐름 |
+|---|---|
+| `/archive` | `GET /api/archive?q=…&state=…&offset=N`, `DELETE /api/drafts/{id}`, `POST /api/drafts/{id}/restore` |
+| GitHub 가져오기 | `POST /api/imports/github` → 새 초안의 `/write?id={id}` |
+| `/settings/profile` | `GET /api/me` → 신규 `POST /api/profiles` 또는 기존 `PATCH /api/profiles` |
+| `/write` | 신규 `POST /api/drafts`; 기존 `GET /api/drafts/{id}`와 `GET /api/records/{id}`로 각 버전 확인 |
+| 자동·수동 초안 저장 | 전체 내용과 최신 `version`으로 `PUT /api/drafts/{id}`; 직렬 처리, 동일 내용 중복 저장 생략 |
+| 공개/비공개 발행 | 저장 완료 후 `POST /api/drafts/{id}/publish`에 `draft_version`, `record_version`, `visibility` 전달 |
+| 사진 | 목록 → 예약 → 사용자 JWT로 Storage 직접 업로드 → 완료 → 본문에 서비스 URL 삽입; 첨부/해제 후 초안 버전 갱신 |
+
+각 회원 요청은 현재 세션의 사용자 ID가 화면의 회원과 같은지 확인하고 최신 access token을 헤더로 전달한다. 토큰은 URL에 넣지 않는다. 사진 미리보기는 인증 헤더를 포함해 Blob으로 받고 Object URL을 해제한다. 서버 전용 키는 사용하지 않는다.
+
+409 충돌은 화면 입력을 덮어쓰지 않고 저장을 중단한다. 사용자가 JSON 입력 백업 후 서버 초안을 다시 불러올 수 있다. 신규 POST의 응답이 유실되면 생성 여부를 알 수 없으므로 자동 재생성하지 않고 아카이브에서 확인하도록 안내한다. 기존 PUT의 실패는 이전 버전을 유지하며, 서버가 이미 처리했다면 재시도 시 409로 감지한다.

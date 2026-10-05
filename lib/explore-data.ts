@@ -41,8 +41,9 @@ export function formatDate(value: string) {
   const parts = new Intl.DateTimeFormat("en", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(value));
   return ["year", "month", "day"].map(key => parts.find(part => part.type === key)?.value).join(".");
 }
-export async function apiRequest(path: string, token?: string, signal?: AbortSignal, method = "GET") {
-  const response = await fetch(path, { method, cache: "no-store", headers: token ? { Authorization: `Bearer ${token}` } : {},
+export async function apiRequest(path: string, token?: string, signal?: AbortSignal, method = "GET", body?: unknown) {
+  const response = await fetch(path, { method, cache: "no-store", headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
+    body: body === undefined ? undefined : JSON.stringify(body),
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000) });
   let payload: Record<string, unknown>;
   try { payload = object(await response.json()); } catch { throw new Error("서버 응답을 읽지 못했습니다. 다시 시도해주세요."); }

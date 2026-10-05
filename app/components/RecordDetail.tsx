@@ -7,22 +7,11 @@ import { apiRequest, demoRecords, errorMessage, formatDate, object, parseFeedPos
 import { buttonClass, useViewer } from "./ExploreShell.tsx";
 import { badgeClass } from "./RecordCard.tsx";
 import BookmarkButton from "./BookmarkButton.tsx";
+import MarkdownBody from "./MarkdownBody.tsx";
 
 type Detail = { post: FeedPost; body: string; details: Record<string, string> };
 type Related = { id: string; title: string; type: keyof typeof typeNames };
 const fieldNames: Record<string, string> = { intro: "소개", goal: "목표", role: "내 역할", tools: "사용 기술", troubleshooting: "문제 해결", result: "결과", topic: "학습 주제", resources: "참고 자료", learned: "배운 내용", practice: "실습", questions: "남은 질문" };
-function safeBody(body: string) {
-  // 본문은 텍스트로 렌더링한다. 사진은 서비스의 UUID 경로만 허용한다.
-  const image = /!\[([^\]\n]*)\]\((\/api\/images\/[0-9a-f-]{36})\)/gi;
-  const parts = [], matches = [...body.matchAll(image)]; let start = 0;
-  for (const match of matches) {
-    parts.push(<span key={`text-${start}`}>{body.slice(start, match.index)}</span>);
-    parts.push(<img key={`image-${match.index}`} src={match[2]} alt={match[1] || "기록 사진"} loading="lazy" className="my-6 max-h-[600px] max-w-full rounded-md border border-zinc-200 object-contain" />);
-    start = match.index! + match[0].length;
-  }
-  parts.push(<span key={`text-${start}`}>{body.slice(start)}</span>); return parts;
-}
-
 export default function RecordDetail({ id, demo }: { id: string; demo: boolean }) {
   const viewer = useViewer();
   const [detail, setDetail] = useState<Detail | null>(null), [error, setError] = useState("");
@@ -83,7 +72,7 @@ export default function RecordDetail({ id, demo }: { id: string; demo: boolean }
       <div className="my-7 flex items-center justify-between gap-3 border-b border-zinc-200 pb-6"><div className="text-sm text-zinc-600">{detail.post.author.nickname}<span className="mx-3 text-zinc-300">/</span><time className="font-mono text-xs" dateTime={detail.post.createdAt}>{formatDate(detail.post.createdAt)}</time></div><BookmarkButton post={detail.post} demo={demo} onSaved={(_id, saved) => setDetail(previous => previous ? { ...previous, post: { ...previous.post, isBookmarked: saved } } : previous)} /></div>
       <div className="mb-8 flex flex-wrap gap-2">{detail.post.tags.map(tag => <span key={tag} className={badgeClass}>{tag}</span>)}</div>
       {Object.entries(detail.details).filter(([, value]) => value.trim()).map(([key, value]) => <section key={key} className="mb-7 rounded-md border border-zinc-200 p-5"><h2 className="mb-3 text-sm font-semibold">{fieldNames[key] ?? key}</h2><p className="whitespace-pre-wrap break-words text-sm leading-7 text-zinc-600">{value}</p></section>)}
-      <article aria-label="기록 본문" className="whitespace-pre-wrap break-words text-[15px] leading-8 text-zinc-700">{safeBody(detail.body)}</article>
+      <article aria-label="기록 본문" className="break-words"><MarkdownBody body={detail.body} /></article>
       <section className="mt-12 border-t border-zinc-200 pt-7"><h2 className="mb-5 flex items-center gap-2 text-sm font-semibold"><Link2 className="h-4 w-4" />연결된 기록</h2>
         {related.map(row => <Link key={row.id} href={`/records/${row.id}${demo ? "?demo=1" : ""}`} className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-zinc-200 p-4 text-sm hover:border-zinc-400"><span className={badgeClass}>{typeNames[row.type]}</span>{row.title}</Link>)}
         {!related.length && !relatedBusy && !relatedError && <p className="text-sm text-zinc-500">공개된 연결 기록이 없습니다.</p>}

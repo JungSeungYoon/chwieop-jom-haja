@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { ArrowUpRight, LogIn, Loader2 } from "lucide-react";
 import { browserAuth, loginWithGitHub } from "../../lib/browser-auth.ts";
 import { apiRequest, errorMessage, object } from "../../lib/explore-data.ts";
 
-type Viewer = { ready: boolean; id?: string; token?: string; nickname?: string; profile: "none" | "checking" | "ready" | "missing" | "error" };
-const ViewerContext = createContext<Viewer>({ ready: false, profile: "none" });
+type Viewer = { ready: boolean; id?: string; token?: string; nickname?: string; profile: "none" | "checking" | "ready" | "missing" | "error"; refreshProfile: () => void };
+const ViewerContext = createContext<Viewer>({ ready: false, profile: "none", refreshProfile: () => {} });
 export const useViewer = () => useContext(ViewerContext);
 export const buttonClass = "inline-flex items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-50";
 export const primaryClass = `${buttonClass} border-zinc-900! bg-zinc-900! text-white hover:bg-zinc-700!`;
@@ -20,6 +20,8 @@ export default function ExploreShell({ demo, children }: { demo: boolean; childr
   const [nickname, setNickname] = useState<string>();
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [profileRevision, setProfileRevision] = useState(0);
+  const profileUser = useRef<string | undefined>(undefined);
   const configured = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
 
   useEffect(() => {
@@ -49,14 +51,14 @@ export default function ExploreShell({ demo, children }: { demo: boolean; childr
   }, [demo, configured]);
 
   useEffect(() => {
-    setNickname(undefined);
-    if (!session) { setProfile("none"); return; }
-    setProfile("checking");
+    if (!session) { setProfile("none"); setNickname(undefined); profileUser.current = undefined; return; }
+    if (profileUser.current !== session.user.id) { setNickname(undefined); setProfile("checking"); }
+    profileUser.current = session.user.id;
     const controller = new AbortController();
     void apiRequest("/api/me", session.access_token, controller.signal).then(result => {
       if (controller.signal.aborted) return;
       const data = object(result.data);
-      if (data.needs_profile === true) { setProfile("missing"); setNotice("보관 기능은 서비스 프로필 등록 후 사용할 수 있습니다. 프로필 설정 화면은 다음 단계에서 연결합니다."); }
+      if (data.needs_profile === true) { setProfile("missing"); setNotice("프로필을 등록하면 글 작성과 보관 기능을 사용할 수 있습니다."); }
       else {
         const profileData = object(data.profile);
         if (typeof profileData.nickname !== "string") throw new Error("프로필 응답을 확인하지 못했습니다.");
@@ -64,7 +66,7 @@ export default function ExploreShell({ demo, children }: { demo: boolean; childr
       }
     }).catch(error => { if (!controller.signal.aborted) { setProfile("error"); setNotice(errorMessage(error)); } });
     return () => controller.abort();
-  }, [session?.access_token]);
+  }, [session?.access_token, profileRevision]);
 
   async function login() {
     setBusy(true); setNotice("");
@@ -80,19 +82,21 @@ export default function ExploreShell({ demo, children }: { demo: boolean; childr
     finally { setBusy(false); }
   }
 
-  return <ViewerContext.Provider value={{ ready, id: session?.user.id, token: session?.access_token, nickname, profile }}>
+  return <ViewerContext.Provider value={{ ready, id: session?.user.id, token: session?.access_token, nickname, profile, refreshProfile: () => setProfileRevision(value => value + 1) }}>
     <div className="min-h-screen bg-white font-sans">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:p-3">본문으로 건너뛰기</a>
       <header className="border-b border-zinc-200">
         <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3 sm:px-8">
           <div className="flex items-center gap-6 sm:gap-10">
             <Link href={demo ? "/?demo=1" : "/"} className="text-lg font-bold tracking-tight">취업좀하자<span className="ml-0.5 text-zinc-400">.</span></Link>
-            <nav aria-label="주 메뉴"><Link href={demo ? "/?demo=1" : "/"} className="text-sm font-medium text-zinc-900">탐색</Link></nav>
+            <nav aria-label="주 메뉴" className="flex flex-wrap gap-4 text-sm font-medium text-zinc-600"><Link href={demo ? "/?demo=1" : "/"} className="text-zinc-900">탐색</Link>{!demo && session && <Link href="/archive">내 아카이브</Link>}</nav>
           </div>
           <div className="flex items-center gap-3">
             {demo ? <Link className={buttonClass} href="/?demo=0">실제 피드 <ArrowUpRight className="h-4 w-4" /></Link> : session ? <>
               <span className="max-w-28 truncate text-sm text-zinc-600">{nickname ?? "GitHub 회원"}</span>
-              <button type="button" className={buttonClass} disabled={busy} onClick={() => void logout()}>로그아웃</button>
+              <Link href="/settings/profile" className="text-sm text-zinc-600">프로필</Link>
+              {profile === "ready" && <Link href="/write" className={primaryClass}>글쓰기</Link>}
+              <button type="button" data-leave-editor="true" className={buttonClass} disabled={busy} onClick={() => void logout()}>로그아웃</button>
             </> : <button type="button" className={primaryClass} disabled={!ready || busy || !configured} onClick={() => void login()}>
               {busy || !ready ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />} GitHub 로그인
             </button>}
@@ -101,6 +105,7 @@ export default function ExploreShell({ demo, children }: { demo: boolean; childr
       </header>
       {demo && <div className="border-b border-zinc-200 bg-zinc-50 px-5 py-2.5 text-center text-xs leading-5 text-zinc-600"><span className="font-semibold text-zinc-900">데모 데이터</span> · 실제 회원의 기록이 아닙니다. 보관은 이 브라우저에만 저장됩니다.</div>}
       {notice && <div role="status" className="mx-auto max-w-6xl px-5 pt-5 text-sm leading-6 text-zinc-600">{notice} {!configured && <Link className="underline" href="/?demo=1">데모 보기</Link>}</div>}
+      {!demo && session && profile === "missing" && <div className="mx-auto max-w-6xl px-5 pt-3 text-sm"><Link className="underline" href="/settings/profile">프로필 등록하기</Link></div>}
       {children}
       <footer className="mt-20 border-t border-zinc-200">
         <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 px-5 py-7 text-xs text-zinc-500 sm:px-8">
